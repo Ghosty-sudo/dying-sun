@@ -1,16 +1,16 @@
-extends SceneTree
+extends Node
 
 func fail(message: String) -> void:
 	push_error("COMBAT_SMOKE FAILED: " + message)
-	quit(1)
+	get_tree().quit(1)
 
-func _init() -> void:
+func _ready() -> void:
 	var packed = load("res://scenes/main.tscn")
 	if packed == null:
 		fail("could not load main scene")
 		return
 	var game = packed.instantiate()
-	root.add_child(game)
+	get_tree().root.add_child(game)
 	var breaker = game.get_node_or_null("BreakerController")
 	if breaker == null:
 		fail("BreakerController missing from main scene")
@@ -55,4 +55,4 @@ func _init() -> void:
 
 	game.free()
 	print("Dying Sun combat kit smoke passed")
-	quit(0)
+	get_tree().quit(0)
