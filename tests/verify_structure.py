@@ -7,6 +7,8 @@ required = [
     Path("scripts/main.gd"),
     Path("scripts/game_state.gd"),
     Path("scripts/save_manager.gd"),
+    Path("scripts/settings_manager.gd"),
+    Path("tests/state_smoke.gd"),
     Path("docs/creative-charter.md"),
     Path("docs/release-standard.md"),
     Path("docs/campaign-spine.md"),
@@ -21,14 +23,17 @@ project = Path("project.godot").read_text(encoding="utf-8")
 script = Path("scripts/main.gd").read_text(encoding="utf-8")
 state = Path("scripts/game_state.gd").read_text(encoding="utf-8")
 save = Path("scripts/save_manager.gd").read_text(encoding="utf-8")
+settings = Path("scripts/settings_manager.gd").read_text(encoding="utf-8")
 scene = Path("scenes/main.tscn").read_text(encoding="utf-8")
 exports = Path("export_presets.cfg").read_text(encoding="utf-8")
+ci = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
 
 checks = {
     "main scene configured": 'run/main_scene="res://scenes/main.tscn"' in project,
     "scene loads main script": 'res://scripts/main.gd' in scene,
     "GameState autoload configured": 'GameState="*res://scripts/game_state.gd"' in project,
     "SaveManager autoload configured": 'SaveManager="*res://scripts/save_manager.gd"' in project,
+    "SettingsManager autoload configured": 'SettingsManager="*res://scripts/settings_manager.gd"' in project,
     "Sol encounter present": 'SOL:' in script,
     "prototype choice memory present": 'remembered_choice' in script,
     "combat present": 'perform_attack' in script,
@@ -47,6 +52,9 @@ checks = {
     "ending eligibility present": 'available_endings' in state,
     "save snapshot present": 'GameState.snapshot()' in save,
     "load validation present": 'GameState.load_snapshot' in save,
+    "settings persistence present": 'save_settings' in settings and 'load_settings' in settings,
+    "display settings present": 'toggle_fullscreen' in settings,
+    "state smoke wired into CI": 'Campaign state smoke' in ci and 'state_smoke.gd' in ci,
     "Windows export present": 'name="Windows Desktop"' in exports,
     "Web export present": 'name="Web"' in exports,
 }
