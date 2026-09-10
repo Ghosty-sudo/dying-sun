@@ -11,6 +11,7 @@ func joy_button(index: JoyButton) -> InputEventJoypadButton:
 	return event
 
 func _ready() -> void:
+	await get_tree().process_frame
 	print("COMBAT_SMOKE // START")
 	SaveManager.clear_campaign()
 	GameState.reset_campaign()
@@ -48,7 +49,8 @@ func _ready() -> void:
 	game.player_pos = Vector2(100.0, 180.0)
 	game.last_move = Vector2.RIGHT
 	game.player_charge = 100.0
-	game.enemies = [game.make_enemy(Vector2(160.0, 180.0), 10, "WARDEN")]
+	game.enemies.clear()
+	game.enemies.append(game.make_enemy(Vector2(160.0, 180.0), 10, "WARDEN"))
 	breaker.perform_breaker(0.82)
 
 	if absf(game.player_charge - 82.0) > 0.01:
