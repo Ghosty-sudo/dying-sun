@@ -11,6 +11,7 @@ func joy_button(index: JoyButton) -> InputEventJoypadButton:
 	return event
 
 func _ready() -> void:
+	print("COMBAT_SMOKE // START")
 	SaveManager.clear_campaign()
 	GameState.reset_campaign()
 	var packed = load("res://scenes/main.tscn")
@@ -19,6 +20,7 @@ func _ready() -> void:
 		return
 	var game = packed.instantiate()
 	get_tree().root.add_child(game)
+	print("COMBAT_SMOKE // MAIN SCENE MOUNTED")
 	var breaker = game.get_node_or_null("BreakerController")
 	var controller = game.get_node_or_null("ControllerAdapter")
 	if breaker == null:
@@ -65,6 +67,7 @@ func _ready() -> void:
 		fail("breaker did not commit attack recovery")
 		game.free()
 		return
+	print("COMBAT_SMOKE // BREAKER VERIFIED")
 
 	game.paused = false
 	controller._input(joy_button(JOY_BUTTON_START))
@@ -77,6 +80,7 @@ func _ready() -> void:
 		fail("standard controller Start did not resume")
 		game.free()
 		return
+	print("COMBAT_SMOKE // PAUSE VERIFIED")
 
 	GameState.reset_campaign()
 	game.current_act = 1
@@ -99,6 +103,7 @@ func _ready() -> void:
 		fail("controller B did not resolve the right narrative choice")
 		game.free()
 		return
+	print("COMBAT_SMOKE // NARRATIVE CHOICES VERIFIED")
 
 	GameState.reset_campaign()
 	game.current_act = 1
@@ -119,6 +124,7 @@ func _ready() -> void:
 		fail("module choice did not suppress same-event boost bleed")
 		game.free()
 		return
+	print("COMBAT_SMOKE // MODULE CHOICE VERIFIED")
 
 	game.free()
 	print("Dying Sun combat kit smoke passed")
