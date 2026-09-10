@@ -5,23 +5,31 @@ const ATTACK_POS := Vector2(562, 282)
 const PLAYER_TOUCH := 11
 const ATTACK_TOUCH := 12
 
+var game
+var touch_adapter
+
 func fail(message: String) -> void:
 	push_error("OPENING_PLAYTEST FAILED: " + message)
 	get_tree().quit(1)
+
+func dispatch(event: InputEvent) -> void:
+	game._input(event)
+	if touch_adapter != null:
+		touch_adapter._input(event)
 
 func send_touch(index: int, pos: Vector2, pressed: bool) -> void:
 	var event := InputEventScreenTouch.new()
 	event.index = index
 	event.position = pos
 	event.pressed = pressed
-	Input.parse_input_event(event)
+	dispatch(event)
 
 func send_drag(index: int, pos: Vector2, relative: Vector2) -> void:
 	var event := InputEventScreenDrag.new()
 	event.index = index
 	event.position = pos
 	event.relative = relative
-	Input.parse_input_event(event)
+	dispatch(event)
 
 func tap(pos: Vector2, index: int = ATTACK_TOUCH) -> void:
 	send_touch(index, pos, true)
@@ -44,7 +52,7 @@ func move_for(direction: Vector2, seconds: float) -> void:
 		await get_tree().process_frame
 	await release_move()
 
-func move_player_toward(game, target: Vector2, stop_distance: float = 34.0, max_seconds: float = 5.0) -> bool:
+func move_player_toward(target: Vector2, stop_distance: float = 34.0, max_seconds: float = 5.0) -> bool:
 	var elapsed := 0.0
 	while game.player_pos.distance_to(target) > stop_distance and elapsed < max_seconds and not game.dead:
 		var direction: Vector2 = target - game.player_pos
@@ -53,7 +61,7 @@ func move_player_toward(game, target: Vector2, stop_distance: float = 34.0, max_
 		elapsed += step_time
 	return not game.dead and game.player_pos.distance_to(target) <= stop_distance
 
-func attack_until_kind_gone(game, kind: String, max_swings: int = 10) -> bool:
+func attack_until_kind_gone(kind: String, max_swings: int = 10) -> bool:
 	for _i in range(max_swings):
 		var target_index := -1
 		for j in range(game.enemies.size()):
@@ -63,7 +71,7 @@ func attack_until_kind_gone(game, kind: String, max_swings: int = 10) -> bool:
 		if target_index < 0:
 			return true
 		var target: Vector2 = game.enemies[target_index]["pos"]
-		if not await move_player_toward(game, target, 38.0, 1.5):
+		if not await move_player_toward(target, 38.0, 1.5):
 			return false
 		game.last_move = (target - game.player_pos).normalized()
 		await tap(ATTACK_POS)
@@ -79,11 +87,15 @@ func _ready() -> void:
 	if packed == null:
 		fail("main scene did not load")
 		return
-	var game = packed.instantiate()
+	game = packed.instantiate()
 	add_child(game)
 	await get_tree().process_frame
+	touch_adapter = game.get_node_or_null("TouchInputAdapter")
+	if touch_adapter == null:
+		fail("TouchInputAdapter missing")
+		return
 
-	# Enter through the real touch title-screen path.
+	# Enter via the same runtime touch handler used by the title screen.
 	await tap(Vector2(320, 192), 2)
 	await get_tree().process_frame
 	if game.ui_mode != "play":
@@ -93,7 +105,7 @@ func _ready() -> void:
 		fail("new game did not begin in intake traversal")
 		return
 
-	# Traverse with SceneTree-dispatched touch input rather than direct state mutation.
+	# Traverse using the runtime joystick handlers, never direct position mutation.
 	var start_x: float = game.player_pos.x
 	await move_for(Vector2.RIGHT, 3.1)
 	if game.player_pos.x <= start_x + 150.0:
@@ -107,8 +119,8 @@ func _ready() -> void:
 		return
 	var hp_at_furnace: int = game.player_hp
 
-	# Fight through the same touch controls a player uses.
-	if not await attack_until_kind_gone(game, "WARDEN", 8):
+	# Fight through touch movement and the actual STRIKE handler.
+	if not await attack_until_kind_gone("WARDEN", 8):
 		fail("reasonable touch combat could not defeat opening Warden")
 		return
 	if game.dead:
@@ -127,7 +139,7 @@ func _ready() -> void:
 		fail("player took damage during the intended furnace hazard grace window")
 		return
 
-	if not await attack_until_kind_gone(game, "HUSK", 10):
+	if not await attack_until_kind_gone("HUSK", 10):
 		fail("reasonable touch combat could not defeat opening Husk")
 		return
 	if game.dead:
