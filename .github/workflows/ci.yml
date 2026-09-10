@@ -61,6 +61,17 @@ jobs:
           fi
           grep -F "Dying Sun full campaign branch smoke passed" godot-campaign-flow.log
 
+      - name: Combat kit smoke
+        shell: bash
+        run: |
+          set -o pipefail
+          godot --headless --path . --script res://tests/combat_smoke.gd 2>&1 | tee godot-combat-smoke.log
+          if grep -E "SCRIPT ERROR:|Parse Error:|COMBAT_SMOKE FAILED|Failed to load script|Failed loading resource" godot-combat-smoke.log; then
+            echo "Combat kit smoke failed"
+            exit 1
+          fi
+          grep -F "Dying Sun combat kit smoke passed" godot-combat-smoke.log
+
       - name: Runtime smoke
         shell: bash
         run: |
