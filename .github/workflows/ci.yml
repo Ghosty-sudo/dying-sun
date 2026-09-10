@@ -1,0 +1,70 @@
+name: Dying Sun CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-and-export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Structural verification
+        run: python3 tests/verify_structure.py
+
+      - name: Setup Godot 4.7.2
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.7.2
+          use-dotnet: false
+          include-templates: true
+
+      - name: Verify Godot version
+        run: godot --version
+
+      - name: Import project headlessly
+        shell: bash
+        run: |
+          set -o pipefail
+          godot --headless --path . --editor --quit 2>&1 | tee godot-import.log
+          if grep -E "SCRIPT ERROR:|Parse Error:|Failed to load script|Failed to create an autoload|Failed loading resource" godot-import.log; then
+            echo "Godot import emitted a parser/resource failure"
+            exit 1
+          fi
+
+      - name: Runtime smoke
+        shell: bash
+        run: |
+          set -o pipefail
+          godot --headless --path . --quit-after 20 2>&1 | tee godot-runtime.log
+          if grep -E "SCRIPT ERROR:|Parse Error:|Failed to load script|Failed to create an autoload|Failed loading resource" godot-runtime.log; then
+            echo "Godot runtime emitted a parser/resource failure"
+            exit 1
+          fi
+
+      - name: Export Windows release build
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p build/windows
+          godot --headless --path . --export-release "Windows Desktop" "build/windows/DyingSun.exe" 2>&1 | tee godot-windows-export.log
+          test -f build/windows/DyingSun.exe
+          test -f build/windows/DyingSun.pck
+          if grep -E "SCRIPT ERROR:|Parse Error:|Project export .* failed|Failed to load script|Failed loading resource" godot-windows-export.log; then
+            echo "Windows export emitted a parser/resource failure"
+            exit 1
+          fi
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DyingSun-Windows
+          path: build/windows/
+          if-no-files-found: error
