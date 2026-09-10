@@ -5,6 +5,11 @@ required = [
     Path("export_presets.cfg"),
     Path("scenes/main.tscn"),
     Path("scripts/main.gd"),
+    Path("scripts/game_state.gd"),
+    Path("scripts/save_manager.gd"),
+    Path("docs/creative-charter.md"),
+    Path("docs/release-standard.md"),
+    Path("docs/campaign-spine.md"),
 ]
 
 missing = [str(path) for path in required if not path.exists()]
@@ -13,14 +18,18 @@ if missing:
 
 project = Path("project.godot").read_text(encoding="utf-8")
 script = Path("scripts/main.gd").read_text(encoding="utf-8")
+state = Path("scripts/game_state.gd").read_text(encoding="utf-8")
+save = Path("scripts/save_manager.gd").read_text(encoding="utf-8")
 scene = Path("scenes/main.tscn").read_text(encoding="utf-8")
 exports = Path("export_presets.cfg").read_text(encoding="utf-8")
 
 checks = {
     "main scene configured": 'run/main_scene="res://scenes/main.tscn"' in project,
     "scene loads main script": 'res://scripts/main.gd' in scene,
+    "GameState autoload configured": 'GameState="*res://scripts/game_state.gd"' in project,
+    "SaveManager autoload configured": 'SaveManager="*res://scripts/save_manager.gd"' in project,
     "Sol encounter present": 'SOL:' in script,
-    "choice memory present": 'remembered_choice' in script,
+    "prototype choice memory present": 'remembered_choice' in script,
     "combat present": 'perform_attack' in script,
     "restart loop present": 'restart_run' in script,
     "touch input present": 'InputEventScreenTouch' in script and 'InputEventScreenDrag' in script,
@@ -28,6 +37,11 @@ checks = {
     "touch attack present": 'TOUCH_ATTACK_CENTER' in script,
     "touch boost present": 'TOUCH_BOOST_CENTER' in script,
     "touch dialogue choice present": 'choose_path(1 if pos.x < 320.0 else 2)' in script,
+    "relationship evidence model present": all(k in state for k in ['"trust"', '"defiance"', '"mercy"', '"pragmatism"', '"curiosity"']),
+    "promise tracking present": 'remember_promise' in state and 'resolve_promise' in state,
+    "ending eligibility present": 'available_endings' in state,
+    "save snapshot present": 'GameState.snapshot()' in save,
+    "load validation present": 'GameState.load_snapshot' in save,
     "Windows export present": 'name="Windows Desktop"' in exports,
     "Web export present": 'name="Web"' in exports,
 }
