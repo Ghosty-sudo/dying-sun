@@ -6,6 +6,12 @@ const CONSOLE_POS := Vector2(475.0, 282.0)
 const PLAYER_SPEED := 118.0
 const DASH_SPEED := 330.0
 const ATTACK_RANGE := 54.0
+const TOUCH_STICK_CENTER := Vector2(92.0, 287.0)
+const TOUCH_STICK_RADIUS := 48.0
+const TOUCH_ATTACK_CENTER := Vector2(562.0, 282.0)
+const TOUCH_BOOST_CENTER := Vector2(500.0, 312.0)
+const TOUCH_INTERACT_CENTER := Vector2(438.0, 312.0)
+const TOUCH_BUTTON_RADIUS := 32.0
 
 var player_pos := Vector2(92.0, 182.0)
 var player_hp := 5
@@ -31,7 +37,14 @@ var remembered_choice := ""
 var status_flash := ""
 var status_time := 0.0
 
+var touch_move_id := -1
+var touch_origin := Vector2.ZERO
+var touch_current := Vector2.ZERO
+var touch_move := Vector2.ZERO
+var touch_mode := false
+
 func _ready() -> void:
+	touch_mode = DisplayServer.is_touchscreen_available() or OS.has_feature("mobile") or OS.has_feature("web")
 	spawn_opening_wave()
 	queue_redraw()
 
@@ -93,7 +106,7 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 func update_player(delta: float) -> void:
-	var move := Vector2.ZERO
+	var move := touch_move
 	if Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP):
 		move.y -= 1.0
 	if Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN):
@@ -152,10 +165,16 @@ func perform_attack() -> void:
 				hit_any = true
 				if int(enemy["hp"]) <= 0:
 					enemies.remove_at(i)
-			else:
+				else:
 					enemies[i] = enemy
 	if hit_any:
 		flash_status("IMPACT")
+
+func perform_boost() -> void:
+	if dash_cooldown <= 0.0 and not dialogue_open and not dead and not complete:
+		dash_time = 0.15
+		dash_cooldown = 0.8
+		flash_status("BOOST")
 
 func try_interact() -> void:
 	if dead:
@@ -169,6 +188,8 @@ func try_interact() -> void:
 		else:
 			if phase == 0:
 				choice_pending = true
+			elif complete:
+				restart_run()
 			else:
 				dialogue_open = false
 		return
@@ -229,12 +250,68 @@ func restart_run() -> void:
 	dialogue_index = 0
 	sol_trust = 0
 	remembered_choice = ""
+	touch_move_id = -1
+	touch_move = Vector2.ZERO
 	spawn_opening_wave()
 	flash_status("FRAME REKINDLED")
 
 func flash_status(text: String) -> void:
 	status_flash = text
 	status_time = 0.7
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventScreenTouch:
+		handle_touch(event as InputEventScreenTouch)
+	elif event is InputEventScreenDrag:
+		handle_drag(event as InputEventScreenDrag)
+
+func handle_touch(event: InputEventScreenTouch) -> void:
+	var pos := event.position
+	if not event.pressed:
+		if event.index == touch_move_id:
+			touch_move_id = -1
+			touch_move = Vector2.ZERO
+		return
+
+	if dead:
+		restart_run()
+		return
+
+	if dialogue_open:
+		if choice_pending:
+			choose_path(1 if pos.x < 320.0 else 2)
+		else:
+			try_interact()
+		return
+
+	if pos.distance_to(TOUCH_ATTACK_CENTER) <= TOUCH_BUTTON_RADIUS + 12.0:
+		perform_attack()
+		return
+	if pos.distance_to(TOUCH_BOOST_CENTER) <= TOUCH_BUTTON_RADIUS + 12.0:
+		perform_boost()
+		return
+	if pos.distance_to(TOUCH_INTERACT_CENTER) <= TOUCH_BUTTON_RADIUS + 12.0:
+		try_interact()
+		return
+
+	if pos.x < 260.0:
+		touch_move_id = event.index
+		touch_origin = pos
+		touch_current = pos
+		touch_move = Vector2.ZERO
+		return
+
+	if phase == 0 and enemies.is_empty() and player_pos.distance_to(CONSOLE_POS) < 60.0:
+		try_interact()
+
+func handle_drag(event: InputEventScreenDrag) -> void:
+	if event.index != touch_move_id:
+		return
+	touch_current = event.position
+	var delta := touch_current - touch_origin
+	if delta.length() > TOUCH_STICK_RADIUS:
+		delta = delta.normalized() * TOUCH_STICK_RADIUS
+	touch_move = delta / TOUCH_STICK_RADIUS
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	if not event is InputEventKey:
@@ -247,10 +324,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		KEY_SPACE:
 			perform_attack()
 		KEY_SHIFT:
-			if dash_cooldown <= 0.0 and not dialogue_open and not dead:
-				dash_time = 0.15
-				dash_cooldown = 0.8
-				flash_status("BOOST")
+			perform_boost()
 		KEY_E:
 			try_interact()
 		KEY_1:
@@ -287,6 +361,8 @@ func _draw() -> void:
 		draw_enemy(enemy)
 	draw_player()
 	draw_hud()
+	if touch_mode and not dialogue_open and not dead and not complete:
+		draw_touch_controls()
 
 func draw_enemy(enemy: Dictionary) -> void:
 	var pos: Vector2 = enemy["pos"]
@@ -324,10 +400,38 @@ func draw_player() -> void:
 		var angle := forward.angle()
 		draw_arc(attack_center, 35.0, angle - 0.9, angle + 0.9, 18, Color("ffe6a3"), 4.0)
 
+func draw_touch_controls() -> void:
+	var font := ThemeDB.fallback_font
+	var stick_center := touch_origin if touch_move_id >= 0 else TOUCH_STICK_CENTER
+	var knob := stick_center
+	if touch_move_id >= 0:
+		knob += touch_move * TOUCH_STICK_RADIUS
+	draw_circle(stick_center, TOUCH_STICK_RADIUS, Color(0.11, 0.14, 0.20, 0.50), true)
+	draw_arc(stick_center, TOUCH_STICK_RADIUS, 0.0, TAU, 32, Color(0.48, 0.52, 0.61, 0.78), 2.0)
+	draw_circle(knob, 18.0, Color(0.85, 0.65, 0.30, 0.72), true)
+
+	draw_circle(TOUCH_ATTACK_CENTER, TOUCH_BUTTON_RADIUS, Color(0.36, 0.12, 0.14, 0.68), true)
+	draw_arc(TOUCH_ATTACK_CENTER, TOUCH_BUTTON_RADIUS, 0.0, TAU, 32, Color("e7a44c"), 2.0)
+	draw_string(font, TOUCH_ATTACK_CENTER + Vector2(-24, 5), "STRIKE", HORIZONTAL_ALIGNMENT_CENTER, 48, 10, Color("fff0cf"))
+
+	var boost_color := Color(0.15, 0.20, 0.30, 0.72) if dash_cooldown <= 0.0 else Color(0.10, 0.11, 0.14, 0.48)
+	draw_circle(TOUCH_BOOST_CENTER, TOUCH_BUTTON_RADIUS - 4.0, boost_color, true)
+	draw_arc(TOUCH_BOOST_CENTER, TOUCH_BUTTON_RADIUS - 4.0, 0.0, TAU, 32, Color("8ba4c7"), 2.0)
+	draw_string(font, TOUCH_BOOST_CENTER + Vector2(-22, 5), "BOOST", HORIZONTAL_ALIGNMENT_CENTER, 44, 9, Color("d8e6f5"))
+
+	var can_interact := phase == 0 and enemies.is_empty() and player_pos.distance_to(CONSOLE_POS) < 60.0
+	if can_interact:
+		draw_circle(TOUCH_INTERACT_CENTER, TOUCH_BUTTON_RADIUS - 6.0, Color(0.43, 0.31, 0.11, 0.80), true)
+		draw_arc(TOUCH_INTERACT_CENTER, TOUCH_BUTTON_RADIUS - 6.0, 0.0, TAU, 32, Color("f2c86b"), 2.0)
+		draw_string(font, TOUCH_INTERACT_CENTER + Vector2(-20, 5), "LINK", HORIZONTAL_ALIGNMENT_CENTER, 40, 9, Color("fff0c5"))
+
 func draw_hud() -> void:
 	var font := ThemeDB.fallback_font
-	draw_string(font, Vector2(34, 20), "DYING SUN // PROTOTYPE 0.1", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color("d7d9df"))
-	draw_string(font, Vector2(34, 350), "WASD move   SHIFT boost   SPACE strike   E interact", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color("8993a5"))
+	draw_string(font, Vector2(34, 20), "DYING SUN // PROTOTYPE 0.1M", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color("d7d9df"))
+	if touch_mode:
+		draw_string(font, Vector2(242, 350), "TOUCH BUILD // left stick + right controls", HORIZONTAL_ALIGNMENT_CENTER, 360, 10, Color("8993a5"))
+	else:
+		draw_string(font, Vector2(34, 350), "WASD move   SHIFT boost   SPACE strike   E interact", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color("8993a5"))
 
 	for i in range(5):
 		var c := Color("e5a84c") if i < player_hp else Color("313846")
@@ -335,7 +439,7 @@ func draw_hud() -> void:
 
 	var objective := "PURGE THE WARDENS"
 	if phase == 0 and enemies.is_empty():
-		objective = "APPROACH TERMINAL // E"
+		objective = "APPROACH TERMINAL // LINK"
 	elif phase == 1:
 		objective = "SURVIVE SOL'S INNER GATE"
 	elif phase == 2:
@@ -346,20 +450,23 @@ func draw_hud() -> void:
 		draw_string(font, Vector2(270, 50), status_flash, HORIZONTAL_ALIGNMENT_CENTER, 120, 14, Color("f2d89e"))
 
 	if phase == 0 and enemies.is_empty() and not dialogue_open:
-		draw_string(font, CONSOLE_POS + Vector2(-72, 32), "E // UNKNOWN SIGNAL", HORIZONTAL_ALIGNMENT_CENTER, 144, 11, Color("e5a84c"))
+		draw_string(font, CONSOLE_POS + Vector2(-72, 32), "LINK // UNKNOWN SIGNAL", HORIZONTAL_ALIGNMENT_CENTER, 144, 11, Color("e5a84c"))
 
 	if dialogue_open and not dialogue_lines.is_empty():
-		draw_rect(Rect2(46, 238, 548, 82), Color(0.035, 0.045, 0.075, 0.96), true)
-		draw_rect(Rect2(46, 238, 548, 82), Color("9b733b"), false, 2.0)
-		draw_multiline_string(font, Vector2(62, 260), dialogue_lines[dialogue_index], HORIZONTAL_ALIGNMENT_LEFT, 515, 13, 18, Color("eee9df"))
+		draw_rect(Rect2(46, 218, 548, 112), Color(0.035, 0.045, 0.075, 0.96), true)
+		draw_rect(Rect2(46, 218, 548, 112), Color("9b733b"), false, 2.0)
+		draw_multiline_string(font, Vector2(62, 242), dialogue_lines[dialogue_index], HORIZONTAL_ALIGNMENT_LEFT, 515, 13, 18, Color("eee9df"))
 		if choice_pending:
-			draw_string(font, Vector2(62, 296), "[1] Tell me the truth.     [2] I don't trust voices in stars.", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color("e5a84c"))
+			draw_rect(Rect2(58, 276, 250, 38), Color(0.29, 0.22, 0.10, 0.70), true)
+			draw_rect(Rect2(332, 276, 250, 38), Color(0.20, 0.12, 0.16, 0.72), true)
+			draw_string(font, Vector2(72, 299), "TRUST // tell me the truth", HORIZONTAL_ALIGNMENT_LEFT, 220, 10, Color("f5d68b"))
+			draw_string(font, Vector2(346, 299), "DEFIANCE // I don't trust you", HORIZONTAL_ALIGNMENT_LEFT, 220, 10, Color("edc3c6"))
 		elif complete and dialogue_index == dialogue_lines.size() - 1:
-			draw_string(font, Vector2(62, 310), "R // RESTART PROTOTYPE", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color("8993a5"))
+			draw_string(font, Vector2(62, 314), "TAP // REKINDLE PROTOTYPE", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color("8993a5"))
 		else:
-			draw_string(font, Vector2(535, 310), "E // CONTINUE", HORIZONTAL_ALIGNMENT_RIGHT, 44, 10, Color("8993a5"))
+			draw_string(font, Vector2(492, 314), "TAP // CONTINUE", HORIZONTAL_ALIGNMENT_RIGHT, 86, 10, Color("8993a5"))
 
 	if dead:
 		draw_rect(Rect2(0, 0, 640, 360), Color(0.02, 0.02, 0.03, 0.72), true)
 		draw_string(font, Vector2(0, 164), "FRAME EXTINGUISHED", HORIZONTAL_ALIGNMENT_CENTER, 640, 24, Color("d46d55"))
-		draw_string(font, Vector2(0, 192), "R or E // REKINDLE", HORIZONTAL_ALIGNMENT_CENTER, 640, 13, Color("d7d9df"))
+		draw_string(font, Vector2(0, 192), "TAP // REKINDLE", HORIZONTAL_ALIGNMENT_CENTER, 640, 13, Color("d7d9df"))
