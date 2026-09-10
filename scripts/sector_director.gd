@@ -13,6 +13,7 @@ func game():
 	return get_parent()
 
 func _ready() -> void:
+	process_priority = -100
 	z_index = 20
 	queue_redraw()
 
