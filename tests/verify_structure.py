@@ -14,6 +14,7 @@ required = [
     Path("scripts/breaker_controller.gd"),
     Path("tests/state_smoke.gd"),
     Path("tests/campaign_flow_smoke.gd"),
+    Path("tests/combat_smoke.gd"),
     Path("docs/creative-charter.md"),
     Path("docs/release-standard.md"),
     Path("docs/campaign-spine.md"),
@@ -72,6 +73,7 @@ checks = {
     "procedural SFX present": 'build_sfx' in audio and 'play_sfx' in audio,
     "state smoke wired into CI": 'Campaign state smoke' in ci and 'state_smoke.gd' in ci,
     "full campaign smoke wired into CI": 'Full campaign branch smoke' in ci and 'campaign_flow_smoke.gd' in ci,
+    "combat smoke wired into CI": 'Combat kit smoke' in ci and 'combat_smoke.gd' in ci,
     "Windows export present": 'name="Windows Desktop"' in exports,
     "Web export present": 'name="Web"' in exports,
 }
