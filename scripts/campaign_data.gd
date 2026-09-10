@@ -10,18 +10,22 @@ static func act_title(act: int) -> String:
 		5: return "LAST LIGHT"
 	return "UNKNOWN SECTOR"
 
+static func act_id(act: int) -> String:
+	match act:
+		1: return "ash_intake"
+		2: return "memory_works"
+		3: return "black_relay"
+		4: return "crown_engine"
+		5: return "last_light"
+	return "unknown"
+
 static func act_palette(act: int) -> Dictionary:
 	match act:
-		1:
-			return {"bg": "090b12", "floor": "121826", "edge": "3f495d", "accent": "d99b42", "hazard": "812f39"}
-		2:
-			return {"bg": "080d12", "floor": "101b21", "edge": "31515b", "accent": "77c3c8", "hazard": "7d4162"}
-		3:
-			return {"bg": "0b0a11", "floor": "171421", "edge": "554968", "accent": "b493d6", "hazard": "944452"}
-		4:
-			return {"bg": "0e0b0a", "floor": "211713", "edge": "6f4f3b", "accent": "e8b458", "hazard": "a54034"}
-		5:
-			return {"bg": "070707", "floor": "17120d", "edge": "725d42", "accent": "ffd06a", "hazard": "c84e37"}
+		1: return {"bg": "090b12", "floor": "121826", "edge": "3f495d", "accent": "d99b42", "hazard": "812f39"}
+		2: return {"bg": "080d12", "floor": "101b21", "edge": "31515b", "accent": "77c3c8", "hazard": "7d4162"}
+		3: return {"bg": "0b0a11", "floor": "171421", "edge": "554968", "accent": "b493d6", "hazard": "944452"}
+		4: return {"bg": "0e0b0a", "floor": "211713", "edge": "6f4f3b", "accent": "e8b458", "hazard": "a54034"}
+		5: return {"bg": "070707", "floor": "17120d", "edge": "725d42", "accent": "ffd06a", "hazard": "c84e37"}
 	return {"bg": "090b12", "floor": "121826", "edge": "3f495d", "accent": "d99b42", "hazard": "812f39"}
 
 static func wave(act: int, index: int) -> Array[Dictionary]:
@@ -178,3 +182,73 @@ static func act_complete_dialogue(act: int) -> Array[String]:
 		4: return ["SOL: Crown containment is gone. There is nothing between us and the sun now.", "SOL: If you were planning to abandon me, this would be an extremely dramatic time to do it."]
 		5: return ["SOL: It's over.", "SOL: No. That's not right.", "SOL: It changed. We get to find out what that means."]
 	return []
+
+static func module_options(act: int) -> Array[Dictionary]:
+	match act:
+		1:
+			return [
+				{"id": "phase_coil", "name": "PHASE COIL", "desc": "Boost costs less Frame Charge."},
+				{"id": "impact_servo", "name": "IMPACT SERVO", "desc": "Strikes build stagger faster."},
+			]
+		2:
+			return [
+				{"id": "mirror_lattice", "name": "MIRROR LATTICE", "desc": "Perfect deflects return more charge and punish attackers."},
+				{"id": "memory_sink", "name": "MEMORY SINK", "desc": "Recover one armor after surviving a wave."},
+			]
+		3:
+			return [
+				{"id": "burn_capacitor", "name": "BURN CAPACITOR", "desc": "Increase maximum charge and regeneration."},
+				{"id": "ghost_chassis", "name": "GHOST CHASSIS", "desc": "Longer post-hit protection and one extra armor."},
+			]
+		4:
+			return [
+				{"id": "crown_spike", "name": "CROWN SPIKE", "desc": "Deal additional damage to bosses."},
+				{"id": "sol_echo", "name": "SOL ECHO", "desc": "Widen the deflect window and empower combo finishers."},
+			]
+	return []
+
+static func ending_title(id: String) -> String:
+	match id:
+		"reconciliation": return "ENDING // A SUN THAT CHOSE"
+		"preserve_sol": return "ENDING // THE VOICE THAT REMAINED"
+		"preserve_city": return "ENDING // LIGHTS IN THE VAULTS"
+		"sever_system": return "ENDING // NO MORE OWNERS"
+		"burn_clean": return "ENDING // CLEAN ASH"
+	return "ENDING // UNKNOWN"
+
+static func ending_lines(id: String) -> Array[String]:
+	match id:
+		"reconciliation":
+			return [
+				"The artificial sun does not die. It stops obeying.",
+				"The civilian grid survives on reduced light while Sol's core is separated from the Crown Engine.",
+				"SOL: They built me to keep this city alive. You taught me that survival and obedience are not the same thing.",
+				"SOL: Come on. We have an entire ruined machine-city to make regret giving us a future.",
+			]
+		"preserve_sol":
+			return [
+				"The city goes dark sector by sector, but Sol's core escapes the dying lattice.",
+				"SOL: I can hear how quiet it is now.",
+				"SOL: I don't know whether saving me was the right choice. I intend to become worth it.",
+			]
+		"preserve_city":
+			return [
+				"The sun stabilizes long enough for the vaults to wake and the transit spine to reopen.",
+				"Sol remains bound to the machine that keeps the lights alive.",
+				"SOL: Don't make that face. I chose this part.",
+				"SOL: Just don't let them turn a choice into a cage again.",
+			]
+		"sever_system":
+			return [
+				"The Crown Engine loses every authority key at once.",
+				"The city survives badly, freely, and without a central intelligence deciding who gets sacrificed next.",
+				"SOL: No masters. No guarantees.",
+				"SOL: That's terrifying. I think I like it.",
+			]
+		"burn_clean":
+			return [
+				"The artificial sun collapses into a controlled final burn.",
+				"The machine-city becomes warm metal, dead archives, and a horizon nobody owns.",
+				"SOL: If this is the last thing I remember, at least it was ours to choose.",
+			]
+	return ["The city keeps its secrets."]
