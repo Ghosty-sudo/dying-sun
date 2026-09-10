@@ -50,6 +50,17 @@ jobs:
           fi
           grep -F "Dying Sun campaign state smoke passed" godot-state-smoke.log
 
+      - name: Full campaign branch smoke
+        shell: bash
+        run: |
+          set -o pipefail
+          godot --headless --path . --script res://tests/campaign_flow_smoke.gd 2>&1 | tee godot-campaign-flow.log
+          if grep -E "SCRIPT ERROR:|Parse Error:|CAMPAIGN_FLOW FAILED|Failed to load script|Failed loading resource" godot-campaign-flow.log; then
+            echo "Full campaign branch smoke failed"
+            exit 1
+          fi
+          grep -F "Dying Sun full campaign branch smoke passed" godot-campaign-flow.log
+
       - name: Runtime smoke
         shell: bash
         run: |
