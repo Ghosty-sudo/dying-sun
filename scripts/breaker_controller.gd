@@ -45,7 +45,7 @@ func _input(event: InputEvent) -> void:
 				release_charge()
 	elif event is InputEventJoypadButton:
 		var button := event as InputEventJoypadButton
-		if int(button.button_index) == 4:
+		if int(button.button_index) == int(JOY_BUTTON_LEFT_SHOULDER):
 			if button.pressed:
 				if breaker_available():
 					begin_charge()
