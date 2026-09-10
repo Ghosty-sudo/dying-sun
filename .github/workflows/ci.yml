@@ -72,6 +72,17 @@ jobs:
           fi
           grep -F "Dying Sun combat kit smoke passed" godot-combat-smoke.log
 
+      - name: Act I onboarding smoke
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 30s godot --headless --path . res://tests/onboarding_smoke.tscn 2>&1 | tee godot-onboarding-smoke.log
+          if grep -E "SCRIPT ERROR:|Parse Error:|ONBOARDING_SMOKE FAILED|ERROR:|Failed to load script|Failed loading resource" godot-onboarding-smoke.log; then
+            echo "Act I onboarding smoke failed"
+            exit 1
+          fi
+          grep -F "Dying Sun Act I onboarding smoke passed" godot-onboarding-smoke.log
+
       - name: Runtime smoke
         shell: bash
         run: |
