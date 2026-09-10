@@ -94,6 +94,17 @@ jobs:
           fi
           grep -F "Dying Sun Act I movement smoke passed" godot-act1-movement.log
 
+      - name: Mobile touch input smoke
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 30s godot --headless --path . res://tests/touch_input_smoke.tscn 2>&1 | tee godot-touch-input.log
+          if grep -E "SCRIPT ERROR:|Parse Error:|TOUCH_INPUT FAILED|ERROR:|Failed to load script|Failed loading resource" godot-touch-input.log; then
+            echo "Mobile touch input smoke failed"
+            exit 1
+          fi
+          grep -F "Dying Sun touch input smoke passed" godot-touch-input.log
+
       - name: Runtime smoke
         shell: bash
         run: |
