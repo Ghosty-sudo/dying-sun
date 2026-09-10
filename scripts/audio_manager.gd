@@ -152,19 +152,19 @@ func synth_sweep(start_hz: float, end_hz: float, seconds: float, amplitude: floa
 	var frames := maxi(1, int(seconds * SAMPLE_RATE))
 	var data := PackedByteArray()
 	data.resize(frames * 2)
-	var phase := 0.0
+	var phase: float = 0.0
 	for i in range(frames):
-		var t := float(i) / float(maxi(1, frames - 1))
-		var hz := lerpf(start_hz, end_hz, t)
+		var t: float = float(i) / float(maxi(1, frames - 1))
+		var hz: float = lerpf(start_hz, end_hz, t)
 		phase += TAU * hz / float(SAMPLE_RATE)
-		var wave := sin(phase)
+		var wave: float = sin(phase)
 		if waveform == "square":
 			wave = 1.0 if wave >= 0.0 else -1.0
 		elif waveform == "noise":
-			var pseudo := sin(float(i * 9176 + 331) * 0.0174533)
+			var pseudo: float = sin(float(i * 9176 + 331) * 0.0174533)
 			wave = wave * 0.55 + pseudo * 0.45
-		var attack := minf(1.0, t * 18.0)
-		var release := pow(1.0 - t, 1.65)
+		var attack: float = minf(1.0, t * 18.0)
+		var release: float = pow(1.0 - t, 1.65)
 		var sample := int(clampf(wave * amplitude * attack * release, -1.0, 1.0) * 32767.0)
 		data.encode_s16(i * 2, sample)
 	var stream := AudioStreamWAV.new()
@@ -175,19 +175,20 @@ func synth_sweep(start_hz: float, end_hz: float, seconds: float, amplitude: floa
 	return stream
 
 func build_ambience(act: int) -> AudioStreamWAV:
-	var seconds := 4.0
+	var seconds: float = 4.0
 	var frames := int(seconds * SAMPLE_RATE)
 	var data := PackedByteArray()
 	data.resize(frames * 2)
-	var base := [43.0, 52.0, 46.0, 58.0, 39.0][clampi(act - 1, 0, 4)]
-	var fifth := base * 1.5
-	var high := base * (2.0 + float(act) * 0.09)
+	var frequencies: Array[float] = [43.0, 52.0, 46.0, 58.0, 39.0]
+	var base: float = frequencies[clampi(act - 1, 0, 4)]
+	var fifth: float = base * 1.5
+	var high: float = base * (2.0 + float(act) * 0.09)
 	for i in range(frames):
-		var time := float(i) / float(SAMPLE_RATE)
-		var slow := sin(TAU * base * time) * 0.44
-		var layer := sin(TAU * fifth * time + sin(time * 0.7) * 0.4) * 0.20
-		var shimmer := sin(TAU * high * time) * (0.06 + 0.03 * sin(time * 1.9))
-		var pulse := 0.80 + 0.20 * sin(TAU * (0.22 + float(act) * 0.025) * time)
+		var time: float = float(i) / float(SAMPLE_RATE)
+		var slow: float = sin(TAU * base * time) * 0.44
+		var layer: float = sin(TAU * fifth * time + sin(time * 0.7) * 0.4) * 0.20
+		var shimmer: float = sin(TAU * high * time) * (0.06 + 0.03 * sin(time * 1.9))
+		var pulse: float = 0.80 + 0.20 * sin(TAU * (0.22 + float(act) * 0.025) * time)
 		var sample := int(clampf((slow + layer + shimmer) * pulse * 0.34, -1.0, 1.0) * 32767.0)
 		data.encode_s16(i * 2, sample)
 	var stream := AudioStreamWAV.new()
