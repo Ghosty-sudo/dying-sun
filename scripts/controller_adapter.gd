@@ -1,7 +1,14 @@
 extends Node
 
+const MODULE_INPUT_LOCK := 0.12
+
 func game():
 	return get_parent()
+
+func suppress_module_action_bleed(parent) -> void:
+	parent.attack_cooldown = maxf(float(parent.attack_cooldown), MODULE_INPUT_LOCK)
+	parent.dash_cooldown = maxf(float(parent.dash_cooldown), MODULE_INPUT_LOCK)
+	parent.deflect_cooldown = maxf(float(parent.deflect_cooldown), MODULE_INPUT_LOCK)
 
 func _input(event: InputEvent) -> void:
 	if not event is InputEventJoypadButton:
@@ -26,9 +33,9 @@ func _input(event: InputEvent) -> void:
 			var selecting_module: bool = bool(parent.module_pending)
 			parent.choose_context_choice(0)
 			if selecting_module:
-				parent.attack_cooldown = maxf(parent.attack_cooldown, 0.12)
+				suppress_module_action_bleed(parent)
 		elif int(button.button_index) == int(JOY_BUTTON_B):
 			var selecting_module: bool = bool(parent.module_pending)
 			parent.choose_context_choice(1)
 			if selecting_module:
-				parent.attack_cooldown = maxf(parent.attack_cooldown, 0.12)
+				suppress_module_action_bleed(parent)
