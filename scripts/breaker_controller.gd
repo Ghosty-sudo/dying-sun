@@ -1,7 +1,7 @@
 extends Node2D
 
-const TOUCH_ATTACK_CENTER := Vector2(562.0, 282.0)
-const TOUCH_ATTACK_RADIUS := 44.0
+const TOUCH_BREAKER_CENTER := Vector2(562.0, 218.0)
+const TOUCH_BREAKER_RADIUS := 30.0
 const MIN_CHARGE_TIME := 0.32
 const FULL_CHARGE_TIME := 0.82
 const BREAKER_COST := 18.0
@@ -15,11 +15,15 @@ var flash_power := 0.0
 func game():
 	return get_parent()
 
+func breaker_available() -> bool:
+	var parent = game()
+	return parent != null and int(parent.current_act) >= 2
+
 func _process(delta: float) -> void:
 	flash_time = maxf(0.0, flash_time - delta)
 	if charging:
 		var parent = game()
-		if parent.ui_mode != "play" or parent.paused or parent.dead or parent.dialogue_open or parent.module_pending:
+		if parent == null or not breaker_available() or parent.ui_mode != "play" or parent.paused or parent.dead or parent.dialogue_open or parent.module_pending:
 			cancel_charge()
 		else:
 			charge_time = minf(FULL_CHARGE_TIME, charge_time + delta)
@@ -33,35 +37,45 @@ func _input(event: InputEvent) -> void:
 		var key := event as InputEventKey
 		if key.keycode == KEY_Q and not key.echo:
 			if key.pressed:
-				begin_charge()
+				if breaker_available():
+					begin_charge()
+				else:
+					parent.flash_status("BREAKER // UNLOCKS ACT II")
 			else:
 				release_charge()
 	elif event is InputEventJoypadButton:
 		var button := event as InputEventJoypadButton
 		if int(button.button_index) == 4:
 			if button.pressed:
-				begin_charge()
+				if breaker_available():
+					begin_charge()
+				else:
+					parent.flash_status("BREAKER // UNLOCKS ACT II")
 			else:
 				release_charge()
 	elif event is InputEventScreenTouch:
 		var touch := event as InputEventScreenTouch
-		if touch.pressed and touch.position.distance_to(TOUCH_ATTACK_CENTER) <= TOUCH_ATTACK_RADIUS:
+		if not breaker_available():
+			return
+		if touch.pressed and touch.position.distance_to(TOUCH_BREAKER_CENTER) <= TOUCH_BREAKER_RADIUS + 10.0:
 			touch_id = touch.index
-			begin_charge()
+			if not begin_charge():
+				touch_id = -1
 		elif not touch.pressed and touch.index == touch_id:
 			touch_id = -1
 			release_charge()
 
-func begin_charge() -> void:
+func begin_charge() -> bool:
 	var parent = game()
-	if charging or parent.dead or parent.dialogue_open or parent.module_pending:
-		return
+	if parent == null or not breaker_available() or charging or parent.dead or parent.dialogue_open or parent.module_pending or parent.attack_cooldown > 0.0:
+		return false
 	if float(parent.player_charge) < BREAKER_COST:
 		parent.flash_status("BREAKER // CHARGE LOW")
-		return
+		return false
 	charging = true
 	charge_time = 0.0
 	AudioManager.play_sfx("breaker_charge")
+	return true
 
 func release_charge() -> void:
 	if not charging:
@@ -80,7 +94,7 @@ func cancel_charge() -> void:
 
 func perform_breaker(held: float) -> void:
 	var parent = game()
-	if parent.dead or parent.dialogue_open or parent.module_pending:
+	if parent == null or not breaker_available() or parent.dead or parent.dialogue_open or parent.module_pending:
 		return
 	if float(parent.player_charge) < BREAKER_COST:
 		parent.flash_status("BREAKER // CHARGE LOW")
@@ -127,15 +141,25 @@ func perform_breaker(held: float) -> void:
 
 func _draw() -> void:
 	var parent = game()
-	if parent == null or parent.ui_mode != "play" or parent.paused:
+	if parent == null or parent.ui_mode != "play" or parent.paused or not breaker_available():
 		return
 	var pos := Vector2(parent.player_pos)
 	var forward := Vector2(parent.last_move).normalized()
+	if parent.touch_mode and not parent.dialogue_open and not parent.module_pending and not parent.dead:
+		var button_fill := Color(0.12, 0.14, 0.18, 0.84)
+		var button_edge := Color(0.88, 0.61, 0.25, 0.92)
+		if charging:
+			button_fill = Color(0.34, 0.22, 0.10, 0.92)
+		draw_circle(TOUCH_BREAKER_CENTER, TOUCH_BREAKER_RADIUS, button_fill)
+		draw_arc(TOUCH_BREAKER_CENTER, TOUCH_BREAKER_RADIUS, 0.0, TAU, 28, button_edge, 2.0)
+		var font := ThemeDB.fallback_font
+		draw_string(font, TOUCH_BREAKER_CENTER + Vector2(-21.0, 4.0), "BRK", HORIZONTAL_ALIGNMENT_CENTER, 42.0, 10, Color("f4dfb4"))
 	if charging:
 		var ratio := clampf(charge_time / FULL_CHARGE_TIME, 0.0, 1.0)
 		var color := Color(0.55 + ratio * 0.35, 0.72, 0.82, 0.40 + ratio * 0.50)
 		draw_arc(pos, 23.0 + ratio * 7.0, -PI, PI, 32, color, 2.0 + ratio * 2.0)
 		draw_line(pos - forward * 7.0, pos - forward * (16.0 + ratio * 9.0), color, 3.0)
+		draw_arc(TOUCH_BREAKER_CENTER, TOUCH_BREAKER_RADIUS + 5.0, -PI * 0.5, -PI * 0.5 + TAU * ratio, 24, Color(1.0, 0.84, 0.48, 0.95), 3.0)
 	if flash_time > 0.0:
 		var center := pos + forward * 24.0
 		var angle := forward.angle()
