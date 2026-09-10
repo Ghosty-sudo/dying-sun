@@ -105,6 +105,17 @@ jobs:
           fi
           grep -F "Dying Sun touch input smoke passed" godot-touch-input.log
 
+      - name: Scripted opening playtest
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 60s godot --headless --path . res://tests/opening_playtest.tscn 2>&1 | tee godot-opening-playtest.log
+          if grep -E "SCRIPT ERROR:|Parse Error:|OPENING_PLAYTEST FAILED|ERROR:|Failed to load script|Failed loading resource" godot-opening-playtest.log; then
+            echo "Scripted opening playtest failed"
+            exit 1
+          fi
+          grep -F "Dying Sun scripted opening playtest passed" godot-opening-playtest.log
+
       - name: Runtime smoke
         shell: bash
         run: |
