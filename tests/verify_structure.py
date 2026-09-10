@@ -23,6 +23,11 @@ checks = {
     "choice memory present": 'remembered_choice' in script,
     "combat present": 'perform_attack' in script,
     "restart loop present": 'restart_run' in script,
+    "touch input present": 'InputEventScreenTouch' in script and 'InputEventScreenDrag' in script,
+    "virtual stick present": 'touch_move' in script and 'TOUCH_STICK_RADIUS' in script,
+    "touch attack present": 'TOUCH_ATTACK_CENTER' in script,
+    "touch boost present": 'TOUCH_BOOST_CENTER' in script,
+    "touch dialogue choice present": 'choose_path(1 if pos.x < 320.0 else 2)' in script,
     "Windows export present": 'name="Windows Desktop"' in exports,
     "Web export present": 'name="Web"' in exports,
 }
