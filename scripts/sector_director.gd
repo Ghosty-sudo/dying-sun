@@ -109,6 +109,8 @@ func process_act_two(parent, delta: float) -> void:
 		"sector_memory_seal":
 			if memory_seal_unlocked:
 				begin_memory_gallery(parent)
+			elif parent.enemies.is_empty():
+				begin_memory_seal(parent)
 		"sector_memory_gallery":
 			apply_memory_sweep(parent)
 			if parent.enemies.is_empty():
