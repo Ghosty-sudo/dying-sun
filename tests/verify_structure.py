@@ -13,6 +13,8 @@ required = [
     Path("scripts/breaker_controller.gd"),
     Path("scripts/controller_adapter.gd"),
     Path("scripts/sector_director.gd"),
+    Path("scripts/act3_director.gd"),
+    Path("scripts/player_path_polish.gd"),
     Path("scripts/touch_input_adapter.gd"),
     Path("tests/state_smoke.gd"),
     Path("tests/campaign_flow_smoke.gd"),
@@ -23,6 +25,10 @@ required = [
     Path("tests/sector_smoke.tscn"),
     Path("tests/act2_sector_smoke.gd"),
     Path("tests/act2_sector_smoke.tscn"),
+    Path("tests/act3_sector_smoke.gd"),
+    Path("tests/act3_sector_smoke.tscn"),
+    Path("tests/player_path_polish_smoke.gd"),
+    Path("tests/player_path_polish_smoke.tscn"),
     Path("tests/act1_movement_smoke.gd"),
     Path("tests/act1_movement_smoke.tscn"),
     Path("tests/touch_input_smoke.gd"),
@@ -31,6 +37,7 @@ required = [
     Path("docs/release-standard.md"),
     Path("docs/campaign-spine.md"),
     Path("docs/combat-spec.md"),
+    Path("docs/player-path-audit.md"),
 ]
 
 missing = [str(path) for path in required if not path.exists()]
@@ -47,10 +54,13 @@ audio = Path("scripts/audio_manager.gd").read_text(encoding="utf-8")
 breaker = Path("scripts/breaker_controller.gd").read_text(encoding="utf-8")
 controller = Path("scripts/controller_adapter.gd").read_text(encoding="utf-8")
 sector = Path("scripts/sector_director.gd").read_text(encoding="utf-8")
+act3 = Path("scripts/act3_director.gd").read_text(encoding="utf-8")
+polish = Path("scripts/player_path_polish.gd").read_text(encoding="utf-8")
 touch = Path("scripts/touch_input_adapter.gd").read_text(encoding="utf-8")
 scene = Path("scenes/main.tscn").read_text(encoding="utf-8")
 exports = Path("export_presets.cfg").read_text(encoding="utf-8")
 ci = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
+audit = Path("docs/player-path-audit.md").read_text(encoding="utf-8")
 
 checks = {
     "main scene configured": 'run/main_scene="res://scenes/main.tscn"' in project,
@@ -73,6 +83,7 @@ checks = {
     "breaker unlock gated to Act II": 'current_act) >= 2' in breaker and 'UNLOCKS ACT II' in breaker,
     "breaker uses standard shoulder mapping": 'JOY_BUTTON_LEFT_SHOULDER' in breaker,
     "breaker can disrupt authored systems": 'on_breaker_fired' in breaker and 'SectorDirector' in breaker,
+    "breaker has dedicated feedback audio": all(token in audio for token in ['"breaker_charge"', '"breaker"']),
     "controller adapter mounted": 'res://scripts/controller_adapter.gd' in scene and 'ControllerAdapter' in scene,
     "controller Start and choice routing present": 'JOY_BUTTON_START' in controller and 'JOY_BUTTON_A' in controller and 'JOY_BUTTON_B' in controller,
     "touch recovery adapter mounted": 'res://scripts/touch_input_adapter.gd' in scene and 'TouchInputAdapter' in scene,
@@ -87,6 +98,18 @@ checks = {
     "Act II begins with Breaker traversal": all(token in sector for token in ['sector_memory_entry', 'sector_memory_seal', 'MEMORY-SEAL', 'INDEX SEAL']),
     "Act II has memory-reactive hazard": all(token in sector for token in ['sector_memory_gallery', 'apply_memory_sweep', 'memory_suppression', 'MEMORY FIELD SILENCED']),
     "Act II choice changes objective": all(token in sector for token in ['sector_archive_hold', 'sector_purge_run', 'ARCHIVE_HOLD_GOAL', 'MEMORY_EXIT_X']),
+    "Act III director mounted": 'res://scripts/act3_director.gd' in scene and 'Act3Director' in scene,
+    "Act III outruns generic progression": 'process_priority = -90' in act3,
+    "Act III routes power instead of clearing a wave": all(token in act3 for token in ['sector_relay_entry', 'sector_relay_sync', 'RELAY_NODES', 'RELAY_HOLD_GOAL']),
+    "Act III civilian route is an escort": all(token in act3 for token in ['sector_civilian_feed', 'escort_pos', 'CIVILIAN_ESCORT_RADIUS', 'civilian_feed_completed']),
+    "Act III defense route actively assists combat": all(token in act3 for token in ['sector_defense_push', 'fire_defense_lattice', 'defense_lattice_powered', 'TARGET CUT']),
+    "Act III consequence reaches boss state": 'LATTICE CUTS ITS SHIELD' in act3 and 'RELAY SAINT' in content,
+    "player-path polish mounted": 'res://scripts/player_path_polish.gd' in scene and 'PlayerPathPolish' in scene,
+    "authored objectives replace vague fallback": all(token in polish for token in ['INNER SEAL', 'BREAKER REQUIRED', 'ROUTING SPINE']),
+    "HUD labels armor and charge": 'ARMOR %d/%d' in polish and 'FRAME %d%%' in polish,
+    "touch pause and checkpoint restart present": 'TOUCH_PAUSE_CENTER' in polish and 'TOUCH_RESTART_RECT' in polish and 'restart_checkpoint' in polish,
+    "desktop hints include Breaker after unlock": 'Q/LB BREAKER' in polish,
+    "maturity audit separates quality gates": all(token in audit for token in ['MACHINE-VALID', 'PLAYTEST-WORTHY', 'RELEASE-WORTHY', 'Acts IV and V']),
     "module progression present": 'module_options' in content and 'choose_module' in script and 'add_module' in state,
     "ending resolution present": 'resolve_final_ending' in script and 'ending_lines' in content,
     "title flow present": 'title_options' in script and 'start_new_game' in script and 'continue_game' in script,
@@ -107,6 +130,8 @@ checks = {
     "combat smoke uses project scene": 'Combat kit smoke' in ci and 'combat_smoke.tscn' in ci,
     "authored Act I smoke wired into CI": 'Authored Act I smoke' in ci and 'sector_smoke.tscn' in ci,
     "authored Act II smoke wired into CI": 'Authored Act II smoke' in ci and 'act2_sector_smoke.tscn' in ci,
+    "authored Act III smoke wired into CI": 'Authored Act III smoke' in ci and 'act3_sector_smoke.tscn' in ci,
+    "player-path polish smoke wired into CI": 'Player-path polish smoke' in ci and 'player_path_polish_smoke.tscn' in ci,
     "Act I movement regression wired into CI": 'Act I movement regression' in ci and 'act1_movement_smoke.tscn' in ci,
     "mobile touch input smoke wired into CI": 'Mobile touch input smoke' in ci and 'touch_input_smoke.tscn' in ci,
     "Windows export present": 'name="Windows Desktop"' in exports,
