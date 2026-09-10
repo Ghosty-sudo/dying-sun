@@ -19,11 +19,14 @@ Fantasy: wake, learn the frame, survive.
 - End encounter: Gate Warden pair + first elite.
 
 ### II — The Memory Works
-Fantasy: discover what powers the city.
-- Introduce ranged enemies, traps, and memory-reactive hazards.
-- Player learns that the artificial sun burns recorded human memory as stabilizing fuel.
-- Sol's own memory has been repeatedly partitioned and fed into the system.
-- First build-defining module choice.
+Fantasy: discover what powers the city and learn to disrupt it rather than merely kill what guards it.
+- Breaker unlocks as a system-interaction verb at the Index Seal, not only as a heavier attack.
+- Memory sweeps create moving battlefield pressure; Breaker can temporarily silence the field and create safe windows.
+- The player learns that the artificial sun burns recorded human memory as stabilizing fuel and that Sol's own memory has repeatedly been partitioned into the system.
+- The archive decision changes the playable objective immediately:
+  - **Preserve:** hold the Index Core under pressure long enough to keep the civilian archive coherent. The route is slower and The Archivist reaches the fight at full integrity.
+  - **Burn:** cross a moving thermal purge while pursued. The route is faster and the purge damages The Archivist before the boss fight, but the archive is permanently lost.
+- Preserve/burn remains a later ending and relationship consequence; the choice must never collapse back into dialogue-only flavor.
 - End boss: The Archivist, a machine that weaponizes stored echoes.
 
 ### III — Black Relay
@@ -58,7 +61,7 @@ Core frame verbs:
 - directional movement;
 - short invulnerable/armor-shifting boost with resource cost;
 - fast melee chain;
-- charged breaker strike;
+- charged breaker strike that can also disrupt compatible world systems;
 - deflect window unlocked early;
 - one equipped frame module active;
 - one passive chassis trait.

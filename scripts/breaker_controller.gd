@@ -135,6 +135,9 @@ func perform_breaker(held: float) -> void:
 		parent.flash_status("BREAKER // SYSTEM SHOCK")
 	else:
 		parent.flash_status("BREAKER // WHIFF")
+	var director = parent.get_node_or_null("SectorDirector")
+	if director != null and director.has_method("on_breaker_fired"):
+		director.on_breaker_fired(hit_any, ratio)
 	AudioManager.play_sfx("breaker")
 	for device in Input.get_connected_joypads():
 		Input.start_joy_vibration(int(device), 0.38 + ratio * 0.18, 0.72 + ratio * 0.20, 0.16)
