@@ -8,6 +8,8 @@ var room_id := ""
 var hazard_clock := 0.0
 var room_title := ""
 var room_title_time := 0.0
+var furnace_phase := 0
+var furnace_grace := 0.0
 
 func game():
 	return get_parent()
@@ -22,6 +24,7 @@ func _process(delta: float) -> void:
 	if parent == null:
 		return
 	hazard_clock += delta
+	furnace_grace = maxf(0.0, furnace_grace - delta)
 	room_title_time = maxf(0.0, room_title_time - delta)
 	if parent.ui_mode != "play" or parent.paused:
 		queue_redraw()
@@ -44,9 +47,13 @@ func _process(delta: float) -> void:
 			if parent.player_pos.x >= INTAKE_THRESHOLD_X:
 				begin_furnace(parent)
 		"sector_furnace":
-			apply_furnace_hazard(parent)
+			if furnace_phase >= 1:
+				apply_furnace_hazard(parent)
 			if parent.enemies.is_empty():
-				begin_coolant_bridge(parent)
+				if furnace_phase == 0:
+					begin_furnace_second(parent)
+				else:
+					begin_coolant_bridge(parent)
 		"sector_coolant":
 			apply_coolant_hazard(parent)
 			if parent.enemies.is_empty():
@@ -66,6 +73,8 @@ func _process(delta: float) -> void:
 
 func begin_intake_walk(parent) -> void:
 	room_id = "intake_walk"
+	furnace_phase = 0
+	furnace_grace = 0.0
 	parent.stage = "sector_intake_walk"
 	parent.enemies.clear()
 	parent.projectiles.clear()
@@ -74,13 +83,22 @@ func begin_intake_walk(parent) -> void:
 
 func begin_furnace(parent) -> void:
 	room_id = "furnace"
+	furnace_phase = 0
+	furnace_grace = 0.0
 	parent.stage = "sector_furnace"
 	parent.enemies.clear()
 	parent.projectiles.clear()
 	parent.player_pos = Vector2(84, 182)
-	parent.enemies.append(parent.make_enemy(Vector2(330, 112), 3, "WARDEN"))
-	parent.enemies.append(parent.make_enemy(Vector2(470, 242), 4, "HUSK"))
-	announce(parent, "ASH FURNACE // VENTS CYCLING")
+	parent.enemies.append(parent.make_enemy(Vector2(350, 180), 3, "WARDEN"))
+	announce(parent, "ASH FURNACE // ONE TARGET // CLOSE AND STRIKE")
+
+func begin_furnace_second(parent) -> void:
+	furnace_phase = 1
+	furnace_grace = 1.4
+	hazard_clock = 0.0
+	parent.projectiles.clear()
+	parent.enemies.append(parent.make_enemy(Vector2(485, 180), 3, "HUSK"))
+	announce(parent, "ASH FURNACE // RANGED CONTACT // VENTS ARMING")
 
 func begin_coolant_bridge(parent) -> void:
 	room_id = "coolant"
@@ -118,7 +136,7 @@ func announce(parent, text: String) -> void:
 	parent.flash_status(text)
 
 func furnace_hot() -> bool:
-	return fmod(hazard_clock, 2.4) < 0.72
+	return furnace_phase >= 1 and furnace_grace <= 0.0 and fmod(hazard_clock, 2.8) < 0.50
 
 func gate_hot() -> bool:
 	return fmod(hazard_clock + 0.8, 2.0) < 0.58
@@ -161,8 +179,9 @@ func _draw() -> void:
 			draw_string(font, Vector2(438, 184), "INNER SEAL", HORIZONTAL_ALIGNMENT_LEFT, 100, 10, Color(0.94, 0.72, 0.38, 0.80))
 		"furnace":
 			for vent in FURNACE_VENTS:
-				draw_circle(vent, 38.0, Color(0.95, 0.28, 0.13, 0.22 if furnace_hot() else 0.07), true)
-				draw_arc(vent, 39.0, 0.0, TAU, 24, Color(0.95, 0.50, 0.18, 0.75), 2.0)
+				var active_alpha := 0.22 if furnace_hot() else 0.04
+				draw_circle(vent, 38.0, Color(0.95, 0.28, 0.13, active_alpha), true)
+				draw_arc(vent, 39.0, 0.0, TAU, 24, Color(0.95, 0.50, 0.18, 0.75 if furnace_phase >= 1 else 0.25), 2.0)
 		"coolant":
 			draw_rect(Rect2(24, 24, 592, 54), Color(0.18, 0.65, 0.80, 0.16), true)
 			draw_rect(Rect2(24, 286, 592, 50), Color(0.18, 0.65, 0.80, 0.16), true)
