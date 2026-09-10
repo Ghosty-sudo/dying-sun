@@ -23,12 +23,12 @@ func _input(event: InputEvent) -> void:
 
 	if parent.module_pending or parent.choice_pending:
 		if int(button.button_index) == int(JOY_BUTTON_A):
-			var selecting_module := parent.module_pending
+			var selecting_module: bool = bool(parent.module_pending)
 			parent.choose_context_choice(0)
 			if selecting_module:
 				parent.attack_cooldown = maxf(parent.attack_cooldown, 0.12)
 		elif int(button.button_index) == int(JOY_BUTTON_B):
-			var selecting_module := parent.module_pending
+			var selecting_module: bool = bool(parent.module_pending)
 			parent.choose_context_choice(1)
 			if selecting_module:
 				parent.attack_cooldown = maxf(parent.attack_cooldown, 0.12)
