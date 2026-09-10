@@ -13,6 +13,7 @@ required = [
     Path("scripts/breaker_controller.gd"),
     Path("scripts/controller_adapter.gd"),
     Path("scripts/sector_director.gd"),
+    Path("scripts/touch_input_adapter.gd"),
     Path("tests/state_smoke.gd"),
     Path("tests/campaign_flow_smoke.gd"),
     Path("tests/campaign_flow_smoke.tscn"),
@@ -22,6 +23,8 @@ required = [
     Path("tests/sector_smoke.tscn"),
     Path("tests/act1_movement_smoke.gd"),
     Path("tests/act1_movement_smoke.tscn"),
+    Path("tests/touch_input_smoke.gd"),
+    Path("tests/touch_input_smoke.tscn"),
     Path("docs/creative-charter.md"),
     Path("docs/release-standard.md"),
     Path("docs/campaign-spine.md"),
@@ -42,6 +45,7 @@ audio = Path("scripts/audio_manager.gd").read_text(encoding="utf-8")
 breaker = Path("scripts/breaker_controller.gd").read_text(encoding="utf-8")
 controller = Path("scripts/controller_adapter.gd").read_text(encoding="utf-8")
 sector = Path("scripts/sector_director.gd").read_text(encoding="utf-8")
+touch = Path("scripts/touch_input_adapter.gd").read_text(encoding="utf-8")
 scene = Path("scenes/main.tscn").read_text(encoding="utf-8")
 exports = Path("export_presets.cfg").read_text(encoding="utf-8")
 ci = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
@@ -68,6 +72,10 @@ checks = {
     "breaker uses standard shoulder mapping": 'JOY_BUTTON_LEFT_SHOULDER' in breaker,
     "controller adapter mounted": 'res://scripts/controller_adapter.gd' in scene and 'ControllerAdapter' in scene,
     "controller Start and choice routing present": 'JOY_BUTTON_START' in controller and 'JOY_BUTTON_A' in controller and 'JOY_BUTTON_B' in controller,
+    "touch recovery adapter mounted": 'res://scripts/touch_input_adapter.gd' in scene and 'TouchInputAdapter' in scene,
+    "touch adapter supports screen drag": 'InputEventScreenDrag' in touch and 'claim_pointer' in touch,
+    "touch adapter supports Web mouse fallback": 'InputEventMouseMotion' in touch and 'MOUSE_POINTER_ID' in touch,
+    "touch adapter recovers lost presses": 'parent.touch_move_id < 0' in touch and 'drag.position - drag.relative' in touch,
     "authored sector director mounted": 'res://scripts/sector_director.gd' in scene and 'SectorDirector' in scene,
     "Act I sector director outruns parent progression": 'process_priority = -100' in sector,
     "Act I begins with traversal": 'sector_intake_walk' in sector and 'INTAKE_THRESHOLD_X' in sector,
@@ -93,6 +101,7 @@ checks = {
     "combat smoke uses project scene": 'Combat kit smoke' in ci and 'combat_smoke.tscn' in ci,
     "authored Act I smoke wired into CI": 'Authored Act I smoke' in ci and 'sector_smoke.tscn' in ci,
     "Act I movement regression wired into CI": 'Act I movement regression' in ci and 'act1_movement_smoke.tscn' in ci,
+    "mobile touch input smoke wired into CI": 'Mobile touch input smoke' in ci and 'touch_input_smoke.tscn' in ci,
     "Windows export present": 'name="Windows Desktop"' in exports,
     "Web export present": 'name="Web"' in exports,
 }
