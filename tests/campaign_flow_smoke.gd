@@ -4,6 +4,18 @@ func fail(message: String) -> void:
 	push_error("CAMPAIGN_FLOW FAILED: " + message)
 	quit(1)
 
+func game_state():
+	var state = root.get_node_or_null("GameState")
+	if state == null:
+		fail("GameState autoload missing from /root")
+	return state
+
+func save_manager():
+	var manager = root.get_node_or_null("SaveManager")
+	if manager == null:
+		fail("SaveManager autoload missing from /root")
+	return manager
+
 func advance_dialogue_to_choice(game) -> void:
 	if game.dialogue_lines.is_empty():
 		fail("expected pre-choice dialogue")
@@ -35,8 +47,12 @@ func clear_current_encounter(game) -> void:
 	game.check_encounter_progression()
 
 func run_branch(choices: Array[int], module_index: int, expected_ending: String) -> bool:
-	SaveManager.clear_campaign()
-	GameState.reset_campaign()
+	var save = save_manager()
+	var state = game_state()
+	if save == null or state == null:
+		return false
+	save.clear_campaign()
+	state.reset_campaign()
 	var packed = load("res://scenes/main.tscn")
 	if packed == null:
 		fail("could not load main scene")
@@ -88,7 +104,7 @@ func run_branch(choices: Array[int], module_index: int, expected_ending: String)
 		fail("expected ending %s, got %s" % [expected_ending, game.ending_id])
 		game.queue_free()
 		return false
-	if not GameState.has_flag("campaign_complete"):
+	if not state.has_flag("campaign_complete"):
 		fail("campaign completion flag missing")
 		game.queue_free()
 		return false
