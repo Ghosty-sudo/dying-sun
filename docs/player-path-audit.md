@@ -7,28 +7,29 @@ This document separates machine validity from player-facing maturity. A green wo
 ## Current classification
 
 - **MACHINE-VALID:** target state after every merged change; requires clean import/runtime, progression regressions, and reproducible exports.
-- **PLAYTEST-WORTHY:** **NO** at this stage. Acts IV and V still use the generic campaign skeleton, so a broad playtest would spend too much of David's time rediscovering known content-maturity gaps.
+- **PLAYTEST-WORTHY:** **NO** at this stage. Act V still uses the generic campaign skeleton and the authored campaign has not yet received its full end-to-end player-path polish pass.
 - **RELEASE-WORTHY:** **NO**. The project remains an internal playable in authored-campaign development.
 
 ## Player-path audit
 
 ### Opening and direction
 
-**Needed — addressed in this pass**
-- Authored sector objectives must not fall back to the vague `KEEP MOVING` HUD copy.
-- The Breaker gate must persistently explain the required input across keyboard, controller, and touch.
-- Armor and Frame Charge need readable labels rather than relying on unlabeled bars.
+**Addressed**
+- Authored sector objectives no longer rely on the vague `KEEP MOVING` fallback.
+- The Breaker gate persistently explains the required input across keyboard, controller, and touch.
+- Armor and Frame Charge have readable text labels rather than relying only on bars.
+- Black Relay and Crown Engine expose live objective progress through the same player-facing HUD hierarchy.
 
 **Still needed before broad handoff**
-- Continue authored campaign treatment through Acts IV and V.
-- Audit the full first-ten-minute sequence after all opening presentation changes are integrated.
+- Finish authored Act V.
+- Re-run a full first-ten-minute and full-campaign path audit after the final authored act is integrated.
 
 ### Controls, pause, retry, navigation
 
-**Needed — addressed in this pass**
-- Mobile Web needs a dedicated pause affordance rather than depending on keyboard Escape.
-- Pause needs a direct checkpoint-restart path on touch and controller/keyboard.
-- Desktop/controller control hints must include Breaker after Act II rather than continuing to advertise an incomplete combat kit.
+**Addressed**
+- Mobile Web has a dedicated pause affordance rather than depending on keyboard Escape.
+- Pause has a direct checkpoint-restart path on touch and controller/keyboard.
+- Desktop/controller control hints include Breaker after Act II.
 
 **Valuable before release candidate**
 - Full input remapping rather than fixed key/button bindings.
@@ -42,18 +43,29 @@ This document separates machine validity from player-facing maturity. A green wo
 - Bosses must test learned mechanics rather than only adding health.
 - Route consequences must be visible mechanically during play, not only stored as flags or dialogue.
 
-**Addressed in Act III**
-- Black Relay begins with relay stabilization under pressure instead of an enemy-clear wave.
+**Addressed in Act III — Black Relay**
+- The act begins with relay stabilization under pressure instead of an enemy-clear wave.
 - The civilian choice becomes an escort objective with the defense grid intentionally dark.
 - The defense choice becomes a lattice-supported push in which the grid actively damages threats and visibly weakens Relay Saint's starting shield.
 
+**Addressed in Act IV — Crown Engine**
+- The act begins with testimony recovery under a rotating Crown scan rather than an enemy-clear wave.
+- Relationship history changes whether Sol volunteers responsibility or the machine record exposes it.
+- OPEN becomes evidence extraction; the recovered proof exposes a real stagger break point on Crown Custodian.
+- FOLLOW becomes a dangerous Frame-Charge overdrive traversal and carries that support into the boss fight.
+- Crown Custodian resolves a counterprofile from observed strike, boost, deflect, or Breaker usage instead of pretending to adapt through dialogue alone.
+- A boost-heavy player receives a telegraphed predicted landing trace with a readable answer: redirect the dash before impact.
+- A Breaker-heavy player can provoke a phase shift during a committed charge; strike and deflect profiles receive their own distinct spatial counters.
+
 ### Feedback and audio
 
-**Needed — addressed in this pass**
-- Relay stabilization and defense-grid assistance receive dedicated procedural feedback tones.
+**Addressed**
+- Breaker charge and impact have distinct procedural cues rather than generic fallback sounds.
+- Relay stabilization and defense-grid assistance have dedicated feedback tones.
+- Crown testimony recovery and Crown phase/landing responses have distinct cues.
 
 **Valuable before release candidate**
-- Replace broad procedural/fallback audio with a more authored sound identity where it materially improves strikes, Breaker, bosses, warnings, UI confirmation, and act atmosphere.
+- Replace broad procedural/fallback audio with a more authored sound identity where it materially improves strikes, bosses, warnings, UI confirmation, and act atmosphere.
 - Validate mix/readability with real speakers/headphones and interruption behavior on the actual target Windows build.
 
 ### Saving and recovery
@@ -61,7 +73,8 @@ This document separates machine validity from player-facing maturity. A green wo
 **Current state**
 - Act/choice checkpoints persist and death recovery exists.
 - Act II's Index Seal has a softlock-recovery guard.
-- This pass adds pause-driven checkpoint restart paths so recovery is available before death.
+- Pause-driven checkpoint restart is available before death.
+- Major authored-route consequences are persisted as campaign flags before boss transitions.
 
 **Valuable before release candidate**
 - Clear save-state communication at important checkpoints.
@@ -70,14 +83,14 @@ This document separates machine validity from player-facing maturity. A green wo
 ### Presentation and consistency
 
 **Still needed before broad handoff**
-- Acts IV–V need authored spatial/mechanical identity.
-- Continue removing prototype-feeling geometry/copy as richer rooms and transitions replace generic arena presentation.
-- Review the campaign end-to-end for abrupt state changes, temporary labels, and inconsistent visual hierarchy after all acts are authored.
+- Act V needs authored spatial/mechanical identity and a climactic presentation standard above the earlier acts.
+- Continue removing prototype-feeling geometry/copy as authored rooms and transitions replace generic arena presentation.
+- Review the campaign end-to-end for abrupt state changes, temporary labels, inconsistent visual hierarchy, and repeated visual language after all acts are authored.
 
 ### Technical and performance
 
 **Needed before release candidate**
-- Keep all critical progression, touch, controller, runtime, and export regressions green.
+- Keep all critical progression, touch, controller, runtime, authored-act, and export regressions green.
 - Investigate and clean known Godot exit-time resource leak warnings rather than normalizing them indefinitely.
 - Validate acceptable performance on modest Windows hardware representative of the intended audience.
 
@@ -93,8 +106,8 @@ The following are not maturity gaps for this game's intended compact identity un
 
 ## Next maturity sequence
 
-1. Finish and validate authored Act III plus this player-path polish layer.
-2. Author Act IV — Crown Engine around truth/reveal machinery and a boss that attacks the player's learned habit.
-3. Author Act V — Last Light as an unstable-system climax rather than another wave pair.
-4. Run an end-to-end player-path polish audit across opening, combat, choices, upgrades, save/retry, pause/settings, transitions, endings, controller, and target Windows presentation.
+1. Validate and merge authored Act IV without promoting the build to playtest-worthy solely because CI is green.
+2. Author Act V — Last Light as an unstable-system climax rather than another wave pair.
+3. Run an end-to-end player-path polish audit across opening, combat, choices, upgrades, save/retry, pause/settings, transitions, endings, controller, and target Windows presentation.
+4. Perform an outside-in maturity comparison against appropriate released compact action games and classify remaining gaps as NEEDED / VALUABLE / DELIBERATELY OMIT.
 5. Only then decide whether the build has crossed from machine-valid to playtest-worthy.
