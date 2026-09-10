@@ -65,6 +65,13 @@ jobs:
           fi
           touch build/web/.nojekyll
 
+      - name: Upload browser build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DyingSun-Web
+          path: build/web/
+          if-no-files-found: error
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
