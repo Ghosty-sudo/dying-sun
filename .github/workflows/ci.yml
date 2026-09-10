@@ -39,6 +39,17 @@ jobs:
             exit 1
           fi
 
+      - name: Campaign state smoke
+        shell: bash
+        run: |
+          set -o pipefail
+          godot --headless --path . --script res://tests/state_smoke.gd 2>&1 | tee godot-state-smoke.log
+          if grep -E "SCRIPT ERROR:|Parse Error:|STATE_SMOKE FAILED|Failed to load script|Failed loading resource" godot-state-smoke.log; then
+            echo "Campaign state smoke failed"
+            exit 1
+          fi
+          grep -F "Dying Sun campaign state smoke passed" godot-state-smoke.log
+
       - name: Runtime smoke
         shell: bash
         run: |
