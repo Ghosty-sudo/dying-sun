@@ -132,6 +132,8 @@ func sfx_gain(id: String) -> float:
 		"hurt", "death": return 0.72
 		"boss": return 0.68
 		"boost": return 0.52
+		"relay_lock": return 0.60
+		"relay_pulse": return 0.50
 		_: return 0.58
 
 func build_sfx(id: String) -> AudioStreamWAV:
@@ -146,6 +148,8 @@ func build_sfx(id: String) -> AudioStreamWAV:
 		"signal": return synth_sweep(430.0, 690.0, 0.32, 0.48, "sine")
 		"module": return synth_sweep(310.0, 930.0, 0.38, 0.45, "sine")
 		"act": return synth_sweep(95.0, 190.0, 0.55, 0.38, "sine")
+		"relay_lock": return synth_sweep(250.0, 880.0, 0.24, 0.54, "square")
+		"relay_pulse": return synth_sweep(690.0, 320.0, 0.15, 0.46, "sine")
 		_: return synth_sweep(220.0, 220.0, 0.10, 0.4, "sine")
 
 func synth_sweep(start_hz: float, end_hz: float, seconds: float, amplitude: float, waveform: String) -> AudioStreamWAV:
