@@ -25,6 +25,7 @@ var furnace_grace := 0.0
 
 var memory_suppression := 0.0
 var memory_grace := 0.0
+var memory_seal_unlocked := false
 var archive_hold := 0.0
 var archive_reinforcements := 0
 
@@ -106,7 +107,7 @@ func process_act_two(parent, delta: float) -> void:
 			if parent.player_pos.x >= MEMORY_ENTRY_THRESHOLD_X:
 				begin_memory_seal(parent)
 		"sector_memory_seal":
-			if parent.enemies.is_empty():
+			if memory_seal_unlocked:
 				begin_memory_gallery(parent)
 		"sector_memory_gallery":
 			apply_memory_sweep(parent)
@@ -184,6 +185,7 @@ func begin_memory_entry(parent) -> void:
 	room_id = "memory_entry"
 	memory_suppression = 0.0
 	memory_grace = 0.0
+	memory_seal_unlocked = false
 	archive_hold = 0.0
 	archive_reinforcements = 0
 	parent.stage = "sector_memory_entry"
@@ -194,11 +196,12 @@ func begin_memory_entry(parent) -> void:
 
 func begin_memory_seal(parent) -> void:
 	room_id = "memory_seal"
+	memory_seal_unlocked = false
 	parent.stage = "sector_memory_seal"
 	parent.enemies.clear()
 	parent.projectiles.clear()
 	parent.player_pos = Vector2(110, 180)
-	var seal: Dictionary = parent.make_enemy(MEMORY_SEAL_POS, 3, "MEMORY-SEAL")
+	var seal: Dictionary = parent.make_enemy(MEMORY_SEAL_POS, 99, "MEMORY-SEAL")
 	seal["breaker_only"] = true
 	seal["stagger_max"] = 999.0
 	parent.enemies.append(seal)
@@ -287,6 +290,8 @@ func on_breaker_fired(hit_any: bool, ratio: float) -> void:
 		return
 	if str(parent.stage) == "sector_memory_seal":
 		if hit_any:
+			memory_seal_unlocked = true
+			parent.enemies.clear()
 			parent.flash_status("BREAKER // INDEX SEAL FRACTURED")
 		return
 	if str(parent.stage) in ["sector_memory_gallery", "sector_archive_hold", "sector_purge_run"]:
