@@ -2,6 +2,9 @@ extends Node
 
 const SAVE_PATH := "user://dying_sun_save_v1.json"
 
+func has_save() -> bool:
+	return FileAccess.file_exists(SAVE_PATH)
+
 func save_campaign() -> bool:
 	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if file == null:
@@ -12,7 +15,7 @@ func save_campaign() -> bool:
 	return true
 
 func load_campaign() -> bool:
-	if not FileAccess.file_exists(SAVE_PATH):
+	if not has_save():
 		return false
 	var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
 	if file == null:
@@ -30,6 +33,12 @@ func load_campaign() -> bool:
 
 func checkpoint(id: String, act_number: int = GameState.act) -> bool:
 	GameState.set_checkpoint(id, act_number)
+	return save_campaign()
+
+func start_new_campaign() -> bool:
+	if not clear_campaign():
+		return false
+	GameState.reset_campaign()
 	return save_campaign()
 
 func clear_campaign() -> bool:
