@@ -15,8 +15,8 @@ Fantasy: wake, learn the frame, survive.
 - Enter through the city's abandoned intake foundry.
 - Learn movement, strike, boost, damage, recovery, and environmental hazards through play.
 - First contact with Sol happens after the player proves basic survival competence.
-- First meaningful relationship choice: demand truth, reject authority, or bargain for access.
-- End encounter: Gate Warden pair + first elite.
+- First meaningful relationship choice: demand truth or reject authority.
+- Authored route moves through intake traversal, layered furnace combat, coolant hazards, inner-gate pressure, and the Gate Custodian.
 
 ### II — The Memory Works
 Fantasy: discover what powers the city and learn to disrupt it rather than merely kill what guards it.
@@ -30,11 +30,14 @@ Fantasy: discover what powers the city and learn to disrupt it rather than merel
 - End boss: The Archivist, a machine that weaponizes stored echoes.
 
 ### III — Black Relay
-Fantasy: choose who gets power.
-- The city is divided between emergency systems competing for the remaining solar output.
-- Player must route limited power among survival infrastructure, weapons, transit, and memory preservation.
-- Routing changes encounters and later resources rather than only changing dialogue.
-- Sol can advocate for a choice and may disagree with the player.
+Fantasy: choose who gets power, then live inside the physical consequence of that choice.
+- The act opens by entering the Routing Spine rather than clearing a generic wave.
+- The player must stabilize three relay nodes by holding position inside active rings while enemies create pressure and live black arcs rotate between relay connections.
+- Finishing the routing sequence makes the power decision at a moment when the system has been physically understood rather than presenting it as detached dialogue.
+- **Civilian route:** divert the remaining output to the civilian vaults. The defense grid goes dark and the player must stay near and escort a moving power current across the relay while hostile reinforcements arrive. Relay Saint reaches the boss fight at full integrity.
+- **Defense route:** arm the defense lattice. The player pushes to the uplink while the friendly grid periodically cuts and staggers hostile machines. The same system visibly strips part of Relay Saint's shield before the boss encounter.
+- The choice therefore changes objective, support, hazard pressure, encounter rhythm, and boss starting state rather than only dialogue or hidden flags.
+- Sol may advocate for civilians and still respect a player who chooses survival through defense; relationship state records mercy/pragmatism without treating obedience as inherently good.
 - End boss: Relay Saint, a defense intelligence occupying a failed human-shaped maintenance shell.
 
 ### IV — The Crown Engine
@@ -44,6 +47,7 @@ Fantasy: learn what Sol did.
 - Relationship state changes what she admits voluntarily versus what the player uncovers independently.
 - Player gains final frame configuration.
 - End boss: Crown Custodian, designed to punish whatever combat habit the player has leaned on most.
+- **Authored-act treatment is still pending.** Existing state-machine content does not yet satisfy this description by itself.
 
 ### V — Last Light
 Fantasy: decide what survives.
@@ -53,6 +57,7 @@ Fantasy: decide what survives.
 - Ending options are gated by actions across the campaign, not a single final dialogue selector.
 - Baseline endings: Preserve Sol / Preserve City / Sever the System / Burn Everything Clean.
 - A stronger reconciliation ending may exist, but only if earned through difficult cross-act conditions.
+- **Authored-act treatment is still pending.** Existing state-machine content does not yet satisfy this description by itself.
 
 ## Combat growth
 Player growth should create new decisions rather than linear stat inflation.
@@ -93,3 +98,5 @@ Sol's behavior should be derived from remembered events plus current stakes. She
 - No procedural campaign pretending to be authored content.
 - Bosses must test learned mechanics, not just have larger health bars.
 - Every act must add either a combat verb, enemy problem, systemic consequence, or major truth.
+- A technically complete state machine is not equivalent to an authored campaign.
+- Machine-valid, playtest-worthy, and release-worthy are separate maturity gates.
