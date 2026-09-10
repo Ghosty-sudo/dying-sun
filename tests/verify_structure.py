@@ -12,11 +12,14 @@ required = [
     Path("scripts/audio_manager.gd"),
     Path("scripts/breaker_controller.gd"),
     Path("scripts/controller_adapter.gd"),
+    Path("scripts/sector_director.gd"),
     Path("tests/state_smoke.gd"),
     Path("tests/campaign_flow_smoke.gd"),
     Path("tests/campaign_flow_smoke.tscn"),
     Path("tests/combat_smoke.gd"),
     Path("tests/combat_smoke.tscn"),
+    Path("tests/sector_smoke.gd"),
+    Path("tests/sector_smoke.tscn"),
     Path("docs/creative-charter.md"),
     Path("docs/release-standard.md"),
     Path("docs/campaign-spine.md"),
@@ -36,6 +39,7 @@ settings = Path("scripts/settings_manager.gd").read_text(encoding="utf-8")
 audio = Path("scripts/audio_manager.gd").read_text(encoding="utf-8")
 breaker = Path("scripts/breaker_controller.gd").read_text(encoding="utf-8")
 controller = Path("scripts/controller_adapter.gd").read_text(encoding="utf-8")
+sector = Path("scripts/sector_director.gd").read_text(encoding="utf-8")
 scene = Path("scenes/main.tscn").read_text(encoding="utf-8")
 exports = Path("export_presets.cfg").read_text(encoding="utf-8")
 ci = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
@@ -62,6 +66,10 @@ checks = {
     "breaker uses standard shoulder mapping": 'JOY_BUTTON_LEFT_SHOULDER' in breaker,
     "controller adapter mounted": 'res://scripts/controller_adapter.gd' in scene and 'ControllerAdapter' in scene,
     "controller Start and choice routing present": 'JOY_BUTTON_START' in controller and 'JOY_BUTTON_A' in controller and 'JOY_BUTTON_B' in controller,
+    "authored sector director mounted": 'res://scripts/sector_director.gd' in scene and 'SectorDirector' in scene,
+    "Act I begins with traversal": 'sector_intake_walk' in sector and 'INTAKE_THRESHOLD_X' in sector,
+    "Act I includes environmental pressure": all(token in sector for token in ['sector_furnace', 'sector_coolant', 'sector_gate_approach', 'apply_furnace_hazard', 'apply_coolant_hazard', 'apply_gate_hazard']),
+    "Act I breaks three-kill repetition": 'game.enemies.size() != 2' not in sector and 'begin_gate_pressure' in sector,
     "module progression present": 'module_options' in content and 'choose_module' in script and 'add_module' in state,
     "ending resolution present": 'resolve_final_ending' in script and 'ending_lines' in content,
     "title flow present": 'title_options' in script and 'start_new_game' in script and 'continue_game' in script,
@@ -80,6 +88,7 @@ checks = {
     "state smoke wired into CI": 'Campaign state smoke' in ci and 'state_smoke.gd' in ci,
     "full campaign smoke uses project scene": 'Full campaign branch smoke' in ci and 'campaign_flow_smoke.tscn' in ci,
     "combat smoke uses project scene": 'Combat kit smoke' in ci and 'combat_smoke.tscn' in ci,
+    "authored Act I smoke wired into CI": 'Authored Act I smoke' in ci and 'sector_smoke.tscn' in ci,
     "Windows export present": 'name="Windows Desktop"' in exports,
     "Web export present": 'name="Web"' in exports,
 }

@@ -72,6 +72,17 @@ jobs:
           fi
           grep -F "Dying Sun combat kit smoke passed" godot-combat-smoke.log
 
+      - name: Authored Act I smoke
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 30s godot --headless --path . res://tests/sector_smoke.tscn 2>&1 | tee godot-sector-smoke.log
+          if grep -E "SCRIPT ERROR:|Parse Error:|SECTOR_SMOKE FAILED|ERROR:|Failed to load script|Failed loading resource" godot-sector-smoke.log; then
+            echo "Authored Act I smoke failed"
+            exit 1
+          fi
+          grep -F "Dying Sun authored Act I sector smoke passed" godot-sector-smoke.log
+
       - name: Runtime smoke
         shell: bash
         run: |
