@@ -43,7 +43,7 @@ func _process(delta: float) -> void:
 		telegraph_time = maxf(0.0, telegraph_time - delta)
 		if telegraph_time <= 0.0:
 			active_time = ACTIVE_TIME
-			AudioManager.play_sfx("crown_trace")
+			AudioManager.play_sfx("crown_phase")
 	elif active_time > 0.0:
 		active_time = maxf(0.0, active_time - delta)
 		if parent.hurt_cooldown <= 0.0 and parent.dash_time <= 0.0 and parent.player_pos.distance_to(trace_pos) <= TRACE_RADIUS:
