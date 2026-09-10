@@ -108,6 +108,7 @@ func run_branch(choices: Array[int], module_index: int, expected_ending: String)
 	return true
 
 func _ready() -> void:
+	await get_tree().process_frame
 	if not run_branch([1, 1, 1, 1, 1], 0, "reconciliation"):
 		return
 	if not run_branch([2, 2, 2, 2, 2], 1, "sever_system"):
