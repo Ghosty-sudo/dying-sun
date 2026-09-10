@@ -136,6 +136,8 @@ func sfx_gain(id: String) -> float:
 		"breaker_charge": return 0.42
 		"relay_lock": return 0.60
 		"relay_pulse": return 0.50
+		"crown_truth": return 0.48
+		"crown_phase": return 0.56
 		_: return 0.58
 
 func build_sfx(id: String) -> AudioStreamWAV:
@@ -154,6 +156,8 @@ func build_sfx(id: String) -> AudioStreamWAV:
 		"breaker": return synth_sweep(138.0, 34.0, 0.26, 0.92, "square")
 		"relay_lock": return synth_sweep(250.0, 880.0, 0.24, 0.54, "square")
 		"relay_pulse": return synth_sweep(690.0, 320.0, 0.15, 0.46, "sine")
+		"crown_truth": return synth_sweep(520.0, 1060.0, 0.30, 0.40, "sine")
+		"crown_phase": return synth_sweep(820.0, 115.0, 0.22, 0.54, "noise")
 		_: return synth_sweep(220.0, 220.0, 0.10, 0.4, "sine")
 
 func synth_sweep(start_hz: float, end_hz: float, seconds: float, amplitude: float, waveform: String) -> AudioStreamWAV:
