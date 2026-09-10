@@ -10,6 +10,7 @@ required = [
     Path("docs/creative-charter.md"),
     Path("docs/release-standard.md"),
     Path("docs/campaign-spine.md"),
+    Path("docs/combat-spec.md"),
 ]
 
 missing = [str(path) for path in required if not path.exists()]
@@ -31,7 +32,11 @@ checks = {
     "Sol encounter present": 'SOL:' in script,
     "prototype choice memory present": 'remembered_choice' in script,
     "combat present": 'perform_attack' in script,
-    "restart loop present": 'restart_run' in script,
+    "checkpoint restart present": 'restart_from_checkpoint' in script,
+    "parry present": 'perform_deflect' in script,
+    "stagger system present": 'apply_stagger' in script and 'SYSTEM BREAK' in script,
+    "boss present": 'CUSTODIAN' in script and 'spawn_gate_custodian' in script,
+    "projectiles present": 'update_projectiles' in script and 'spawn_projectile' in script,
     "touch input present": 'InputEventScreenTouch' in script and 'InputEventScreenDrag' in script,
     "virtual stick present": 'touch_move' in script and 'TOUCH_STICK_RADIUS' in script,
     "touch attack present": 'TOUCH_ATTACK_CENTER' in script,
