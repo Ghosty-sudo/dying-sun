@@ -94,6 +94,17 @@ jobs:
           fi
           grep -F "Dying Sun authored Act II sector smoke passed" godot-act2-sector-smoke.log
 
+      - name: Authored Act III smoke
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 30s godot --headless --path . res://tests/act3_sector_smoke.tscn 2>&1 | tee godot-act3-sector-smoke.log
+          if grep -E "SCRIPT ERROR:|Parse Error:|ACT3_SECTOR_SMOKE FAILED|ERROR:|Failed to load script|Failed loading resource" godot-act3-sector-smoke.log; then
+            echo "Authored Act III smoke failed"
+            exit 1
+          fi
+          grep -F "Dying Sun authored Act III sector smoke passed" godot-act3-sector-smoke.log
+
       - name: Act I movement regression
         shell: bash
         run: |
@@ -115,6 +126,17 @@ jobs:
             exit 1
           fi
           grep -F "Dying Sun touch input smoke passed" godot-touch-input.log
+
+      - name: Player-path polish smoke
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 30s godot --headless --path . res://tests/player_path_polish_smoke.tscn 2>&1 | tee godot-player-path-polish.log
+          if grep -E "SCRIPT ERROR:|Parse Error:|PLAYER_PATH_POLISH FAILED|ERROR:|Failed to load script|Failed loading resource" godot-player-path-polish.log; then
+            echo "Player-path polish smoke failed"
+            exit 1
+          fi
+          grep -F "Dying Sun player-path polish smoke passed" godot-player-path-polish.log
 
       - name: Scripted opening playtest
         shell: bash
