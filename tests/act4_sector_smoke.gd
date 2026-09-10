@@ -31,8 +31,9 @@ func _ready() -> void:
 	await get_tree().process_frame
 
 	var director = game.get_node_or_null("Act4Director")
-	if director == null:
-		fail("Act4Director missing from main scene")
+	var boost_counter = game.get_node_or_null("CrownBoostCounter")
+	if director == null or boost_counter == null:
+		fail("Act IV requires its director and telegraphed boost counter")
 		return
 	if str(game.stage) != "sector_crown_entry" or not game.enemies.is_empty():
 		fail("Act IV did not replace generic wave_a with Crown Engine traversal")
@@ -157,6 +158,29 @@ func _ready() -> void:
 		fail("Breaker counterprofile did not phase away from committed charge")
 		return
 	breaker.charging = false
+
+	# A boost-heavy counter must be telegraphed at the predicted landing point,
+	# then punish staying on that mark after the dash ends. This makes the answer
+	# to the counter readable: redirect rather than stop using mobility entirely.
+	director.counter_profile = "boost"
+	game.player_hp = game.max_hp()
+	game.hurt_cooldown = 0.0
+	game.player_pos = Vector2(220, 180)
+	game.last_move = Vector2.RIGHT
+	game.dash_time = 0.25
+	boost_counter.previous_boost = false
+	boost_counter._process(0.01)
+	if float(boost_counter.telegraph_time) <= 0.0 or boost_counter.trace_pos.x <= game.player_pos.x:
+		fail("boost counterprofile did not telegraph a predicted landing trace")
+		return
+	game.player_pos = boost_counter.trace_pos
+	game.dash_time = 0.0
+	boost_counter._process(boost_counter.TELEGRAPH_TIME)
+	var boost_hp_before := game.player_hp
+	boost_counter._process(0.01)
+	if game.player_hp >= boost_hp_before:
+		fail("boost landing trace did not punish remaining on the telegraphed mark")
+		return
 
 	game.queue_free()
 	SaveManager.clear_campaign()
