@@ -80,6 +80,7 @@ func _ready() -> void:
 
 	GameState.reset_campaign()
 	game.current_act = 1
+	game.stage = "choice"
 	game.choice_pending = true
 	game.dialogue_open = true
 	controller._input(joy_button(JOY_BUTTON_A))
@@ -90,11 +91,32 @@ func _ready() -> void:
 
 	GameState.reset_campaign()
 	game.current_act = 1
+	game.stage = "choice"
 	game.choice_pending = true
 	game.dialogue_open = true
 	controller._input(joy_button(JOY_BUTTON_B))
 	if game.choice_pending or not GameState.has_flag("first_contact_defiance"):
 		fail("controller B did not resolve the right narrative choice")
+		game.free()
+		return
+
+	GameState.reset_campaign()
+	game.current_act = 1
+	game.stage = "module"
+	game.choice_pending = false
+	game.dialogue_open = false
+	game.module_pending = true
+	game.module_choices.clear()
+	game.module_choices.append({"id": "impact_servo", "name": "Impact Servo", "desc": "test"})
+	game.module_choices.append({"id": "phase_coil", "name": "Phase Coil", "desc": "test"})
+	game.dash_cooldown = 0.0
+	controller._input(joy_button(JOY_BUTTON_B))
+	if not GameState.has_module("phase_coil") or game.current_act != 2:
+		fail("controller B did not install the right module option")
+		game.free()
+		return
+	if game.dash_cooldown < 0.11:
+		fail("module choice did not suppress same-event boost bleed")
 		game.free()
 		return
 
