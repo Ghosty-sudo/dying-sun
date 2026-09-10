@@ -11,6 +11,7 @@ required = [
     Path("scripts/settings_manager.gd"),
     Path("scripts/audio_manager.gd"),
     Path("scripts/breaker_controller.gd"),
+    Path("scripts/controller_adapter.gd"),
     Path("tests/state_smoke.gd"),
     Path("tests/campaign_flow_smoke.gd"),
     Path("tests/campaign_flow_smoke.tscn"),
@@ -34,6 +35,7 @@ save = Path("scripts/save_manager.gd").read_text(encoding="utf-8")
 settings = Path("scripts/settings_manager.gd").read_text(encoding="utf-8")
 audio = Path("scripts/audio_manager.gd").read_text(encoding="utf-8")
 breaker = Path("scripts/breaker_controller.gd").read_text(encoding="utf-8")
+controller = Path("scripts/controller_adapter.gd").read_text(encoding="utf-8")
 scene = Path("scenes/main.tscn").read_text(encoding="utf-8")
 exports = Path("export_presets.cfg").read_text(encoding="utf-8")
 ci = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
@@ -57,6 +59,9 @@ checks = {
     "breaker controller present": 'perform_breaker' in breaker and 'BREAKER_COST' in breaker,
     "breaker mounted in scene": 'res://scripts/breaker_controller.gd' in scene and 'BreakerController' in scene,
     "breaker unlock gated to Act II": 'current_act) >= 2' in breaker and 'UNLOCKS ACT II' in breaker,
+    "breaker uses standard shoulder mapping": 'JOY_BUTTON_LEFT_SHOULDER' in breaker,
+    "controller adapter mounted": 'res://scripts/controller_adapter.gd' in scene and 'ControllerAdapter' in scene,
+    "controller Start and choice routing present": 'JOY_BUTTON_START' in controller and 'JOY_BUTTON_A' in controller and 'JOY_BUTTON_B' in controller,
     "module progression present": 'module_options' in content and 'choose_module' in script and 'add_module' in state,
     "ending resolution present": 'resolve_final_ending' in script and 'ending_lines' in content,
     "title flow present": 'title_options' in script and 'start_new_game' in script and 'continue_game' in script,
