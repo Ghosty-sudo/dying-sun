@@ -41,6 +41,19 @@ func _ready() -> void:
 		fail("Act II traversal gate is not the intended memory seal")
 		return
 
+	# The tutorial rule must be truthful: a normal strike cannot satisfy the seal.
+	game.player_pos = Vector2(340, 180)
+	game.last_move = Vector2.RIGHT
+	game.perform_attack()
+	await get_tree().process_frame
+	if str(game.stage) != "sector_memory_seal" or bool(director.memory_seal_unlocked):
+		fail("ordinary strike incorrectly satisfied the Breaker-only Index Seal")
+		return
+	if game.enemies.is_empty() or int(game.enemies[0].get("hp", 0)) < 90:
+		fail("Index Seal is not resistant enough to ordinary combat")
+		return
+
+	game.attack_cooldown = 0.0
 	game.player_pos = Vector2(330, 180)
 	game.last_move = Vector2.RIGHT
 	game.player_charge = 100.0
