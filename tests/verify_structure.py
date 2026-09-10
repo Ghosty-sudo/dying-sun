@@ -10,7 +10,9 @@ required = [
     Path("scripts/game_state.gd"),
     Path("scripts/save_manager.gd"),
     Path("scripts/settings_manager.gd"),
+    Path("scripts/audio_manager.gd"),
     Path("tests/state_smoke.gd"),
+    Path("tests/campaign_flow_smoke.gd"),
     Path("docs/creative-charter.md"),
     Path("docs/release-standard.md"),
     Path("docs/campaign-spine.md"),
@@ -27,6 +29,7 @@ content = Path("scripts/campaign_data.gd").read_text(encoding="utf-8")
 state = Path("scripts/game_state.gd").read_text(encoding="utf-8")
 save = Path("scripts/save_manager.gd").read_text(encoding="utf-8")
 settings = Path("scripts/settings_manager.gd").read_text(encoding="utf-8")
+audio = Path("scripts/audio_manager.gd").read_text(encoding="utf-8")
 scene = Path("scenes/main.tscn").read_text(encoding="utf-8")
 exports = Path("export_presets.cfg").read_text(encoding="utf-8")
 ci = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
@@ -37,6 +40,7 @@ checks = {
     "GameState autoload configured": 'GameState="*res://scripts/game_state.gd"' in project,
     "SaveManager autoload configured": 'SaveManager="*res://scripts/save_manager.gd"' in project,
     "SettingsManager autoload configured": 'SettingsManager="*res://scripts/settings_manager.gd"' in project,
+    "AudioManager autoload configured": 'AudioManager="*res://scripts/audio_manager.gd"' in project,
     "five campaign acts present": all(name in content for name in ["ASH INTAKE", "THE MEMORY WORKS", "BLACK RELAY", "THE CROWN ENGINE", "LAST LIGHT"]),
     "five bosses present": all(name in content for name in ["GATE-CUSTODIAN", "THE-ARCHIVIST", "RELAY-SAINT", "CROWN-CUSTODIAN", "LAST-LIGHT"]),
     "Sol dialogue present": 'SOL:' in content,
@@ -59,7 +63,10 @@ checks = {
     "save snapshot present": 'GameState.snapshot()' in save,
     "load validation present": 'GameState.load_snapshot' in save,
     "settings persistence present": 'save_settings' in settings and 'load_settings' in settings,
+    "procedural ambience present": 'build_ambience' in audio and 'LOOP_FORWARD' in audio,
+    "procedural SFX present": 'build_sfx' in audio and 'play_sfx' in audio,
     "state smoke wired into CI": 'Campaign state smoke' in ci and 'state_smoke.gd' in ci,
+    "full campaign smoke wired into CI": 'Full campaign branch smoke' in ci and 'campaign_flow_smoke.gd' in ci,
     "Windows export present": 'name="Windows Desktop"' in exports,
     "Web export present": 'name="Web"' in exports,
 }
