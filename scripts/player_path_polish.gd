@@ -9,7 +9,7 @@ func game():
 
 func _ready() -> void:
 	process_priority = 80
-	z_index = 15
+	z_index = 40
 	queue_redraw()
 
 func _process(_delta: float) -> void:
