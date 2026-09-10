@@ -44,7 +44,7 @@ func move_for(direction: Vector2, seconds: float) -> void:
 		await get_tree().process_frame
 	await release_move()
 
-func move_toward(game, target: Vector2, stop_distance: float = 34.0, max_seconds: float = 5.0) -> bool:
+func move_player_toward(game, target: Vector2, stop_distance: float = 34.0, max_seconds: float = 5.0) -> bool:
 	var elapsed := 0.0
 	while game.player_pos.distance_to(target) > stop_distance and elapsed < max_seconds and not game.dead:
 		var direction: Vector2 = target - game.player_pos
@@ -63,7 +63,7 @@ func attack_until_kind_gone(game, kind: String, max_swings: int = 10) -> bool:
 		if target_index < 0:
 			return true
 		var target: Vector2 = game.enemies[target_index]["pos"]
-		if not await move_toward(game, target, 38.0, 1.5):
+		if not await move_player_toward(game, target, 38.0, 1.5):
 			return false
 		game.last_move = (target - game.player_pos).normalized()
 		await tap(ATTACK_POS)
