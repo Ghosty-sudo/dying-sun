@@ -4,7 +4,15 @@ func fail(message: String) -> void:
 	push_error("COMBAT_SMOKE FAILED: " + message)
 	get_tree().quit(1)
 
+func joy_button(index: JoyButton) -> InputEventJoypadButton:
+	var event := InputEventJoypadButton.new()
+	event.button_index = index
+	event.pressed = true
+	return event
+
 func _ready() -> void:
+	SaveManager.clear_campaign()
+	GameState.reset_campaign()
 	var packed = load("res://scenes/main.tscn")
 	if packed == null:
 		fail("could not load main scene")
@@ -12,8 +20,13 @@ func _ready() -> void:
 	var game = packed.instantiate()
 	get_tree().root.add_child(game)
 	var breaker = game.get_node_or_null("BreakerController")
+	var controller = game.get_node_or_null("ControllerAdapter")
 	if breaker == null:
 		fail("BreakerController missing from main scene")
+		game.free()
+		return
+	if controller == null:
+		fail("ControllerAdapter missing from main scene")
 		game.free()
 		return
 
@@ -50,6 +63,38 @@ func _ready() -> void:
 		return
 	if game.attack_cooldown <= 0.0:
 		fail("breaker did not commit attack recovery")
+		game.free()
+		return
+
+	game.paused = false
+	controller._input(joy_button(JOY_BUTTON_START))
+	if not game.paused:
+		fail("standard controller Start did not pause")
+		game.free()
+		return
+	controller._input(joy_button(JOY_BUTTON_START))
+	if game.paused:
+		fail("standard controller Start did not resume")
+		game.free()
+		return
+
+	GameState.reset_campaign()
+	game.current_act = 1
+	game.choice_pending = true
+	game.dialogue_open = true
+	controller._input(joy_button(JOY_BUTTON_A))
+	if game.choice_pending or not GameState.has_flag("first_contact_trust"):
+		fail("controller A did not resolve the left narrative choice")
+		game.free()
+		return
+
+	GameState.reset_campaign()
+	game.current_act = 1
+	game.choice_pending = true
+	game.dialogue_open = true
+	controller._input(joy_button(JOY_BUTTON_B))
+	if game.choice_pending or not GameState.has_flag("first_contact_defiance"):
+		fail("controller B did not resolve the right narrative choice")
 		game.free()
 		return
 
