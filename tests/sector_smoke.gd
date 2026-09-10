@@ -28,14 +28,32 @@ func _ready() -> void:
 
 	game.player_pos = Vector2(500, 182)
 	await get_tree().process_frame
-	if str(game.stage) != "sector_furnace" or game.enemies.size() != 2:
-		fail("crossing the intake seal did not enter the two-enemy furnace encounter")
+	if str(game.stage) != "sector_furnace" or game.enemies.size() != 1:
+		fail("crossing the intake seal did not enter the single-target furnace lesson")
+		return
+	if str(game.enemies[0].get("kind", "")) != "WARDEN":
+		fail("first furnace threat is not the intended melee Warden")
+		return
+	if int(director.furnace_phase) != 0 or director.furnace_hot():
+		fail("furnace hazard activated during the first combat lesson")
+		return
+
+	game.enemies.clear()
+	await get_tree().process_frame
+	if str(game.stage) != "sector_furnace" or game.enemies.size() != 1:
+		fail("first furnace clear did not stage the second threat")
+		return
+	if str(game.enemies[0].get("kind", "")) != "HUSK" or int(game.enemies[0].get("hp", 0)) != 3:
+		fail("second furnace threat is not the tuned ranged Husk")
+		return
+	if int(director.furnace_phase) != 1 or float(director.furnace_grace) <= 0.0 or director.furnace_hot():
+		fail("furnace vents did not preserve their arming grace period")
 		return
 
 	game.enemies.clear()
 	await get_tree().process_frame
 	if str(game.stage) != "sector_coolant" or game.enemies.size() != 2:
-		fail("furnace clear did not advance to the coolant bridge")
+		fail("second furnace clear did not advance to the coolant bridge")
 		return
 
 	game.enemies.clear()
