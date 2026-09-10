@@ -30,12 +30,12 @@ Desktop controls:
 
 Controller controls:
 - **left stick** — move
-- **A / south face** — strike chain
-- **B / east face** — boost
+- **A / south face** — strike chain; choose left option when a decision is open
+- **B / east face** — boost; choose right option when a decision is open
 - **X / west face** — deflect
-- **Y / north face** — interact
+- **Y / north face** — interact / advance dialogue
 - **left shoulder (hold, Act II+)** — charge and release Breaker
-- **menu/start** — pause
+- **menu/start** — pause / resume
 
 Mobile Web controls:
 - **left thumb** — virtual movement stick
