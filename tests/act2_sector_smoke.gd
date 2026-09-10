@@ -53,6 +53,16 @@ func _ready() -> void:
 		fail("Index Seal is not resistant enough to ordinary combat")
 		return
 
+	# Even if some future non-Breaker system deletes the seal dictionary, the room must recover instead of softlocking.
+	game.enemies.clear()
+	await get_tree().process_frame
+	if str(game.stage) != "sector_memory_seal" or game.enemies.size() != 1 or bool(director.memory_seal_unlocked):
+		fail("Index Seal did not respawn after non-Breaker removal")
+		return
+	if str(game.enemies[0].get("kind", "")) != "MEMORY-SEAL":
+		fail("Index Seal recovery spawned the wrong gate")
+		return
+
 	game.attack_cooldown = 0.0
 	game.player_pos = Vector2(330, 180)
 	game.last_move = Vector2.RIGHT
