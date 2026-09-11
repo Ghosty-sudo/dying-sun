@@ -12,7 +12,8 @@ Current campaign state:
 - **Act I — Ash Intake:** authored traversal, layered combat teaching, furnace/coolant hazards, gate approach, and Gate Custodian;
 - **Act II — The Memory Works:** Breaker-gated Index Seal, moving memory pressure, preserve/burn objectives with mechanical consequences, and The Archivist;
 - **Act III — Black Relay:** routing-spine stabilization under live arcs, followed by either civilian power escort or defense-lattice assault, with the route changing the Relay Saint encounter;
-- **Acts IV–V:** still below the authored-act standard and therefore a known blocker to broad playtest-worthiness.
+- **Act IV — The Crown Engine:** relationship-sensitive witness recovery, OPEN/FOLLOW routes with different objectives and boss advantages, and a Crown Custodian that adapts to observed combat habits with readable counterplay;
+- **Act V — Last Light:** still below the authored-act standard and therefore the remaining authored-campaign blocker to broad playtest-worthiness.
 
 The combat frame currently supports strike chains, boost, deflect, stagger breaks, and the Act II+ Breaker heavy/system-disruption attack. Relationship, choice, checkpoint, death, module, and ending state persist through the campaign.
 

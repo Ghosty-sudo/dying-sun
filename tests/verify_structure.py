@@ -14,6 +14,8 @@ required = [
     Path("scripts/controller_adapter.gd"),
     Path("scripts/sector_director.gd"),
     Path("scripts/act3_director.gd"),
+    Path("scripts/act4_director.gd"),
+    Path("scripts/crown_boost_counter.gd"),
     Path("scripts/player_path_polish.gd"),
     Path("scripts/touch_input_adapter.gd"),
     Path("tests/state_smoke.gd"),
@@ -27,6 +29,8 @@ required = [
     Path("tests/act2_sector_smoke.tscn"),
     Path("tests/act3_sector_smoke.gd"),
     Path("tests/act3_sector_smoke.tscn"),
+    Path("tests/act4_sector_smoke.gd"),
+    Path("tests/act4_sector_smoke.tscn"),
     Path("tests/player_path_polish_smoke.gd"),
     Path("tests/player_path_polish_smoke.tscn"),
     Path("tests/act1_movement_smoke.gd"),
@@ -55,6 +59,8 @@ breaker = Path("scripts/breaker_controller.gd").read_text(encoding="utf-8")
 controller = Path("scripts/controller_adapter.gd").read_text(encoding="utf-8")
 sector = Path("scripts/sector_director.gd").read_text(encoding="utf-8")
 act3 = Path("scripts/act3_director.gd").read_text(encoding="utf-8")
+act4 = Path("scripts/act4_director.gd").read_text(encoding="utf-8")
+crown_boost = Path("scripts/crown_boost_counter.gd").read_text(encoding="utf-8")
 polish = Path("scripts/player_path_polish.gd").read_text(encoding="utf-8")
 touch = Path("scripts/touch_input_adapter.gd").read_text(encoding="utf-8")
 scene = Path("scenes/main.tscn").read_text(encoding="utf-8")
@@ -104,13 +110,24 @@ checks = {
     "Act III civilian route is an escort": all(token in act3 for token in ['sector_civilian_feed', 'escort_pos', 'CIVILIAN_ESCORT_RADIUS', 'civilian_feed_completed']),
     "Act III defense route actively assists combat": all(token in act3 for token in ['sector_defense_push', 'fire_defense_lattice', 'defense_lattice_powered', 'TARGET CUT']),
     "Act III consequence reaches boss state": 'LATTICE CUTS ITS SHIELD' in act3 and 'RELAY SAINT' in content,
+    "Act IV director mounted": 'res://scripts/act4_director.gd' in scene and 'Act4Director' in scene,
+    "Act IV adaptive boost counter mounted": 'res://scripts/crown_boost_counter.gd' in scene and 'CrownBoostCounter' in scene,
+    "Act IV outruns generic progression": 'process_priority = -80' in act4,
+    "Act IV recovers testimony instead of clearing a wave": all(token in act4 for token in ['sector_crown_entry', 'sector_crown_audit', 'TRUTH_NODES', 'TRUTH_HOLD_GOAL']),
+    "Act IV relationship changes testimony source": all(token in act4 for token in ['relationship_value("trust")', 'relationship_value("defiance")', 'AUTHORITY: SOL']),
+    "Act IV choice changes playable route": all(token in act4 for token in ['sector_record_extraction', 'sector_crown_overdrive', 'crown_record_extracted', 'crown_overdrive_crossed']),
+    "Act IV records and counters combat habits": all(token in act4 for token in ['strike_uses', 'boost_uses', 'deflect_uses', 'breaker_uses', 'dominant_habit', 'crown_counter_profile']),
+    "Act IV boost adaptation is telegraphed": all(token in crown_boost for token in ['LANDING TRACE', 'TELEGRAPH_TIME', 'trace_pos', 'REDIRECT']),
+    "Act IV consequence reaches boss state": all(token in act4 for token in ['PROOF EXPOSED A BREAK POINT', 'SOL OVERDRIVE ONLINE', 'CROWN CUSTODIAN']),
+    "Act IV has dedicated feedback audio": all(token in audio for token in ['"crown_truth"', '"crown_phase"']),
     "player-path polish mounted": 'res://scripts/player_path_polish.gd' in scene and 'PlayerPathPolish' in scene,
     "Act I-II authored objectives override vague fallback": all(token in polish for token in ['INNER SEAL', 'BREAKER REQUIRED']),
     "Act III objective source is delegated": 'Act3Director' in polish and 'objective_text' in polish and 'ROUTING SPINE' in act3,
+    "Act IV objective source is delegated": 'Act4Director' in polish and 'sector_crown_audit' in polish and 'COUNTERPROFILE' in act4,
     "HUD labels armor and charge": 'ARMOR %d/%d' in polish and 'FRAME %d%%' in polish,
     "touch pause and checkpoint restart present": 'TOUCH_PAUSE_CENTER' in polish and 'TOUCH_RESTART_RECT' in polish and 'restart_checkpoint' in polish,
     "desktop hints include Breaker after unlock": 'Q/LB BREAKER' in polish,
-    "maturity audit separates quality gates": all(token in audit for token in ['MACHINE-VALID', 'PLAYTEST-WORTHY', 'RELEASE-WORTHY', 'Acts IV and V']),
+    "maturity audit separates quality gates": all(token in audit for token in ['MACHINE-VALID', 'PLAYTEST-WORTHY', 'RELEASE-WORTHY', 'Act V']),
     "module progression present": 'module_options' in content and 'choose_module' in script and 'add_module' in state,
     "ending resolution present": 'resolve_final_ending' in script and 'ending_lines' in content,
     "title flow present": 'title_options' in script and 'start_new_game' in script and 'continue_game' in script,
@@ -132,6 +149,7 @@ checks = {
     "authored Act I smoke wired into CI": 'Authored Act I smoke' in ci and 'sector_smoke.tscn' in ci,
     "authored Act II smoke wired into CI": 'Authored Act II smoke' in ci and 'act2_sector_smoke.tscn' in ci,
     "authored Act III smoke wired into CI": 'Authored Act III smoke' in ci and 'act3_sector_smoke.tscn' in ci,
+    "authored Act IV smoke wired into CI": 'Authored Act IV smoke' in ci and 'act4_sector_smoke.tscn' in ci,
     "player-path polish smoke wired into CI": 'Player-path polish smoke' in ci and 'player_path_polish_smoke.tscn' in ci,
     "Act I movement regression wired into CI": 'Act I movement regression' in ci and 'act1_movement_smoke.tscn' in ci,
     "mobile touch input smoke wired into CI": 'Mobile touch input smoke' in ci and 'touch_input_smoke.tscn' in ci,

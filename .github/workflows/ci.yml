@@ -105,6 +105,17 @@ jobs:
           fi
           grep -F "Dying Sun authored Act III sector smoke passed" godot-act3-sector-smoke.log
 
+      - name: Authored Act IV smoke
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 30s godot --headless --path . res://tests/act4_sector_smoke.tscn 2>&1 | tee godot-act4-sector-smoke.log
+          if grep -E "SCRIPT ERROR:|Parse Error:|ACT4_SECTOR_SMOKE FAILED|ERROR:|Failed to load script|Failed loading resource" godot-act4-sector-smoke.log; then
+            echo "Authored Act IV smoke failed"
+            exit 1
+          fi
+          grep -F "Dying Sun authored Act IV sector smoke passed" godot-act4-sector-smoke.log
+
       - name: Act I movement regression
         shell: bash
         run: |

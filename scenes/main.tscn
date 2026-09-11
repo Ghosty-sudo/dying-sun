@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource path="res://scripts/game.gd" type="Script" id="1_game"]
 [ext_resource path="res://scripts/breaker_controller.gd" type="Script" id="2_breaker"]
@@ -7,6 +7,8 @@
 [ext_resource path="res://scripts/touch_input_adapter.gd" type="Script" id="5_touch"]
 [ext_resource path="res://scripts/act3_director.gd" type="Script" id="6_act3"]
 [ext_resource path="res://scripts/player_path_polish.gd" type="Script" id="7_polish"]
+[ext_resource path="res://scripts/act4_director.gd" type="Script" id="8_act4"]
+[ext_resource path="res://scripts/crown_boost_counter.gd" type="Script" id="9_boost_counter"]
 
 [node name="DyingSun" type="Node2D"]
 script = ExtResource("1_game")
@@ -22,6 +24,12 @@ script = ExtResource("4_sector")
 
 [node name="Act3Director" type="Node2D" parent="."]
 script = ExtResource("6_act3")
+
+[node name="Act4Director" type="Node2D" parent="."]
+script = ExtResource("8_act4")
+
+[node name="CrownBoostCounter" type="Node2D" parent="."]
+script = ExtResource("9_boost_counter")
 
 [node name="PlayerPathPolish" type="Node2D" parent="."]
 script = ExtResource("7_polish")

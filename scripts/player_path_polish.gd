@@ -75,6 +75,7 @@ func objective_text(parent = null) -> String:
 
 	var director = parent.get_node_or_null("SectorDirector")
 	var act3 = parent.get_node_or_null("Act3Director")
+	var act4 = parent.get_node_or_null("Act4Director")
 	match str(parent.stage):
 		"sector_intake_walk": return "OBJECTIVE // REACH THE INNER SEAL"
 		"sector_furnace":
@@ -93,6 +94,12 @@ func objective_text(parent = null) -> String:
 		"sector_relay_entry", "sector_relay_sync", "sector_civilian_feed", "sector_defense_push":
 			if act3 != null and act3.has_method("objective_text"):
 				return str(act3.objective_text())
+		"sector_crown_entry", "sector_crown_audit", "sector_record_extraction", "sector_crown_overdrive":
+			if act4 != null and act4.has_method("objective_text"):
+				return str(act4.objective_text())
+		"boss":
+			if int(parent.current_act) == 4 and act4 != null and act4.has_method("objective_text"):
+				return str(act4.objective_text())
 	return ""
 
 func _draw() -> void:

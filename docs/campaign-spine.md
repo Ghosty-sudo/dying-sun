@@ -1,6 +1,6 @@
 # Dying Sun — Campaign Spine
 
-Last updated: 2026-09-10
+Last updated: 2026-09-11
 Status: Sol-directed internal design baseline
 
 ## Product shape
@@ -41,13 +41,25 @@ Fantasy: choose who gets power, then live inside the physical consequence of tha
 - End boss: Relay Saint, a defense intelligence occupying a failed human-shaped maintenance shell.
 
 ### IV — The Crown Engine
-Fantasy: learn what Sol did.
-- Reach the systems that created/bound Sol.
-- Reveal: Sol participated in earlier attempts to preserve the city, including choices that sacrificed people and portions of herself.
-- Relationship state changes what she admits voluntarily versus what the player uncovers independently.
-- Player gains final frame configuration.
-- End boss: Crown Custodian, designed to punish whatever combat habit the player has leaned on most.
-- **Authored-act treatment is still pending.** Existing state-machine content does not yet satisfy this description by itself.
+Fantasy: learn what Sol did, then survive a machine that has been studying how you survive.
+- Enter the Crown audit chamber instead of another generic combat wave.
+- Recover three witness records by holding active testimony rings while rotating Crown scans and enemy pressure force movement and timing.
+- Relationship state changes how the truth is delivered:
+  - sufficiently trusting players hear Sol volunteer specific admissions;
+  - defiant players can expose machine records carrying Sol's authority/signature instead of relying on her confession.
+- The core reveal is concrete: Sol authorized an evacuation denial, partitioned herself to keep the artificial sun stable, and accepted the city's survival while people were erased.
+- The OPEN/FOLLOW decision changes the playable route immediately:
+  - **OPEN:** remain in the Crown record system and extract two physical proofs under the rotating scan. The evidence exposes a real break point in Crown Custodian's stagger state.
+  - **FOLLOW:** defer the record and accept Sol's frame overdrive. The route becomes a fast crossing through an expanding Crown surge while Frame Charge regenerates aggressively, and the boss encounter begins fully charged.
+- Crown Engine observes actual combat behavior during the act and resolves a dominant habit: strike, boost, deflect, Breaker, or balanced.
+- Crown Custodian then announces and applies a readable counterprofile rather than receiving only more health:
+  - strike-heavy play is answered by telegraphed close-pressure punishment;
+  - boost-heavy play receives a predicted landing trace that can be defeated by redirecting the dash;
+  - deflect-heavy play receives expanding non-projectile shock pressure that must be moved/boosted through;
+  - Breaker-heavy play causes the Custodian to phase away from a committed charge, forcing timing and positioning changes;
+  - balanced play keeps the rotating Crown scan as general pressure.
+- The adaptive fight is meant to create the realization that the machine has noticed the player's habits while still making every counter legible and learnable.
+- End boss: Crown Custodian.
 
 ### V — Last Light
 Fantasy: decide what survives.
