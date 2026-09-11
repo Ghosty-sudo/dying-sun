@@ -138,6 +138,17 @@ jobs:
           fi
           grep -F "Dying Sun touch input smoke passed" godot-touch-input.log
 
+      - name: Accelerated Web stability smoke
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 30s godot --headless --path . res://tests/web_stability_smoke.tscn 2>&1 | tee godot-web-stability.log
+          if grep -E "SCRIPT ERROR:|Parse Error:|WEB_STABILITY FAILED|ERROR:|Failed to load script|Failed loading resource" godot-web-stability.log; then
+            echo "Accelerated Web stability smoke failed"
+            exit 1
+          fi
+          grep -F "Dying Sun accelerated Web stability smoke passed" godot-web-stability.log
+
       - name: Player-path polish smoke
         shell: bash
         run: |
