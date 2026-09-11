@@ -62,7 +62,7 @@ func _input(event: InputEvent) -> void:
 			last_released_screen_id = touch.index
 			last_release_ms = now_ms()
 			clear_authority()
-	sync_parent()
+		sync_parent()
 		return
 
 	if event is InputEventScreenDrag:
