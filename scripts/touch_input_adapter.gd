@@ -57,10 +57,12 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		var motion := event as InputEventMouseMotion
 		if parent.touch_move_id == MOUSE_POINTER_ID and gameplay_accepts_movement(parent):
-			if (motion.button_mask & MOUSE_BUTTON_MASK_LEFT) != 0:
-				update_vector(parent, motion.position)
-			else:
-				release_pointer(parent)
+			# Touch-derived mouse motion in iOS Web can arrive with button_mask == 0
+			# even while the finger is still down. Once we have captured a pointer,
+			# trust the capture until the explicit mouse-up event instead of treating
+			# a missing mask as a release. This keeps the virtual stick alive on the
+			# real browser path while preserving normal mouse-up cleanup.
+			update_vector(parent, motion.position)
 
 func claim_pointer(parent, pointer_id: int, origin: Vector2) -> void:
 	parent.touch_move_id = pointer_id

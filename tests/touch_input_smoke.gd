@@ -56,8 +56,9 @@ func _ready() -> void:
 		fail("screen touch release left joystick captured")
 		return
 
-	# Exercise the Web/iOS mouse-compatible fallback. Historically this path
-	# could tap buttons but could never claim the joystick.
+	# Exercise the Web/iOS mouse-compatible fallback. Mobile Safari/Godot can
+	# emit touch-derived mouse motion with button_mask == 0 even while the touch
+	# remains active, so the captured pointer must not depend on that mask.
 	game.player_pos = Vector2(86, 182)
 	start_pos = game.player_pos
 	var mouse_down := InputEventMouseButton.new()
@@ -70,12 +71,12 @@ func _ready() -> void:
 	var mouse_drag := InputEventMouseMotion.new()
 	mouse_drag.position = Vector2(145, 286)
 	mouse_drag.relative = Vector2(55, 0)
-	mouse_drag.button_mask = MOUSE_BUTTON_MASK_LEFT
+	mouse_drag.button_mask = 0
 	game._input(mouse_drag)
 	adapter._input(mouse_drag)
 	game.update_player(0.25)
 	if game.player_pos.x <= start_pos.x:
-		fail("mouse-compatible Web drag did not move player")
+		fail("mouse-compatible Web drag without button mask did not move player")
 		return
 
 	var mouse_up := InputEventMouseButton.new()
