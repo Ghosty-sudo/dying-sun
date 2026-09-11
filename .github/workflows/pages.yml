@@ -5,6 +5,8 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Use a fresh workflow run after changing Pages publishing source.
+# Re-running an old run can leave duplicate github-pages artifacts in that run.
 permissions:
   contents: read
   pages: write
