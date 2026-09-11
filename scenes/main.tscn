@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource path="res://scripts/game.gd" type="Script" id="1_game"]
 [ext_resource path="res://scripts/breaker_controller.gd" type="Script" id="2_breaker"]
@@ -9,6 +9,7 @@
 [ext_resource path="res://scripts/player_path_polish.gd" type="Script" id="7_polish"]
 [ext_resource path="res://scripts/act4_director.gd" type="Script" id="8_act4"]
 [ext_resource path="res://scripts/crown_boost_counter.gd" type="Script" id="9_boost_counter"]
+[ext_resource path="res://scripts/melee_contact_guard.gd" type="Script" id="10_melee_guard"]
 
 [node name="DyingSun" type="Node2D"]
 script = ExtResource("1_game")
@@ -36,3 +37,6 @@ script = ExtResource("7_polish")
 
 [node name="TouchInputAdapter" type="Node" parent="."]
 script = ExtResource("5_touch")
+
+[node name="MeleeContactGuard" type="Node" parent="."]
+script = ExtResource("10_melee_guard")
