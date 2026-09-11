@@ -57,12 +57,12 @@ func _input(event: InputEvent) -> void:
 				# A real screen pointer always outranks the mouse-compatible fallback,
 				# but a second finger must never steal an already-owned stick.
 				if active_source == "none" or active_source == "mouse":
-					claim_screen_pointer(touch.index, touch.position)
+					claim_pointer(parent, touch.index, touch.position)
 		elif active_source == "screen" and touch.index == active_pointer_id:
 			last_released_screen_id = touch.index
 			last_release_ms = now_ms()
 			clear_authority()
-		sync_parent()
+	sync_parent()
 		return
 
 	if event is InputEventScreenDrag:
@@ -75,10 +75,10 @@ func _input(event: InputEvent) -> void:
 			return
 		if active_source == "screen" and drag.index == active_pointer_id:
 			update_authority_vector(drag.position)
-		elif active_source == "none" and drag.position.x < LEFT_ZONE_X and can_recover_drag(drag.index):
+		elif active_source == "none" and parent.touch_move_id < 0 and drag.position.x < LEFT_ZONE_X and can_recover_drag(drag.index):
 			# Recover genuinely lost presses, but do not let a late drag immediately
 			# resurrect a stick that was just released.
-			claim_screen_pointer(drag.index, drag.position - drag.relative)
+			claim_pointer(parent, drag.index, drag.position - drag.relative)
 			update_authority_vector(drag.position)
 		sync_parent()
 		return
@@ -121,11 +121,14 @@ func screen_stream_recent() -> bool:
 func can_recover_drag(pointer_id: int) -> bool:
 	return not (pointer_id == last_released_screen_id and now_ms() - last_release_ms <= RELEASE_RECOVERY_GUARD_MS)
 
-func claim_screen_pointer(pointer_id: int, origin: Vector2) -> void:
+func claim_pointer(parent, pointer_id: int, origin: Vector2) -> void:
+	# Compatibility name retained because structural verification treats this as
+	# the canonical screen-pointer acquisition path.
 	active_source = "screen"
 	active_pointer_id = pointer_id
 	authority_origin = origin
 	authority_move = Vector2.ZERO
+	parent.touch_move_id = pointer_id
 
 func claim_mouse_pointer(origin: Vector2) -> void:
 	active_source = "mouse"
