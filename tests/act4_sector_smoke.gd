@@ -98,7 +98,7 @@ func _ready() -> void:
 		fail("Crown proof extraction state was not persisted")
 		return
 
-	var hp_before := game.player_hp
+	var hp_before: int = int(game.player_hp)
 	game.player_pos = Vector2(game.enemies[0]["pos"]) + Vector2(40, 0)
 	game.hurt_cooldown = 0.0
 	game.dash_time = 0.0
@@ -127,7 +127,7 @@ func _ready() -> void:
 		return
 
 	game.player_charge = 0.0
-	var charge_before := game.player_charge
+	var charge_before: float = float(game.player_charge)
 	director.update_overdrive_route(game, 0.5)
 	if game.player_charge <= charge_before:
 		fail("Sol overdrive did not mechanically replenish Frame Charge")
@@ -176,7 +176,7 @@ func _ready() -> void:
 	game.player_pos = boost_counter.trace_pos
 	game.dash_time = 0.0
 	boost_counter._process(boost_counter.TELEGRAPH_TIME)
-	var boost_hp_before := game.player_hp
+	var boost_hp_before: int = int(game.player_hp)
 	boost_counter._process(0.01)
 	if game.player_hp >= boost_hp_before:
 		fail("boost landing trace did not punish remaining on the telegraphed mark")
