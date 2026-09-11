@@ -24,12 +24,17 @@ func _ready() -> void:
 	print("COMBAT_SMOKE // MAIN SCENE MOUNTED")
 	var breaker = game.get_node_or_null("BreakerController")
 	var controller = game.get_node_or_null("ControllerAdapter")
+	var melee = game.get_node_or_null("MeleeContactGuard")
 	if breaker == null:
 		fail("BreakerController missing from main scene")
 		game.free()
 		return
 	if controller == null:
 		fail("ControllerAdapter missing from main scene")
+		game.free()
+		return
+	if melee == null:
+		fail("MeleeContactGuard missing from main scene")
 		game.free()
 		return
 
@@ -70,6 +75,59 @@ func _ready() -> void:
 		game.free()
 		return
 	print("COMBAT_SMOKE // BREAKER VERIFIED")
+
+	# Human playtesting exposed a visible-contact mismatch: the first strike
+	# used a 52px center-point test even though a WARDEN has a visible 12px
+	# body radius. A WARDEN centered 64px ahead should therefore be hit by the
+	# visible arc/body overlap, but not by the legacy center-point test alone.
+	GameState.reset_campaign()
+	game.current_act = 1
+	game.stage = "wave_a"
+	game.ui_mode = "play"
+	game.paused = false
+	game.dead = false
+	game.dialogue_open = false
+	game.module_pending = false
+	game.player_pos = Vector2(100.0, 180.0)
+	game.last_move = Vector2.RIGHT
+	game.attack_time = 0.0
+	game.attack_cooldown = 0.0
+	game.combo_step = 0
+	game.combo_window = 0.0
+	game.enemies.clear()
+	game.enemies.append(game.make_enemy(Vector2(164.0, 180.0), 3, "WARDEN"))
+	game.perform_attack()
+	if int(game.enemies[0]["hp"]) != 3:
+		fail("legacy center-point strike unexpectedly reached visible-edge fixture")
+		game.free()
+		return
+	melee._process(0.016)
+	if int(game.enemies[0]["hp"]) != 2:
+		fail("visible-edge melee contact did not register exactly one hit")
+		game.free()
+		return
+	melee._process(0.016)
+	if int(game.enemies[0]["hp"]) != 2:
+		fail("melee contact guard double-hit during one swing")
+		game.free()
+		return
+
+	# Preserve directional combat: visible-radius forgiveness must not turn the
+	# strike into a radial auto-hit behind the player.
+	game.attack_time = 0.0
+	game.attack_cooldown = 0.0
+	game.combo_step = 0
+	game.combo_window = 0.0
+	melee._process(0.016)
+	game.enemies.clear()
+	game.enemies.append(game.make_enemy(Vector2(36.0, 180.0), 3, "WARDEN"))
+	game.perform_attack()
+	melee._process(0.016)
+	if int(game.enemies[0]["hp"]) != 3:
+		fail("visible contact forgiveness hit an enemy behind the player")
+		game.free()
+		return
+	print("COMBAT_SMOKE // VISIBLE MELEE CONTACT VERIFIED")
 
 	game.paused = false
 	controller._input(joy_button(JOY_BUTTON_START))
