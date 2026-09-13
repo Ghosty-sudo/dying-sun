@@ -220,7 +220,7 @@ func begin_shared_descent(parent) -> void:
 
 func update_shared_descent(parent, delta: float) -> void:
 	link_elapsed += delta
-	var linked := parent.player_pos.distance_to(link_pos) <= LINK_RADIUS
+	var linked: bool = Vector2(parent.player_pos).distance_to(link_pos) <= LINK_RADIUS
 	if linked:
 		link_pos.x = minf(CORE_EXIT_X, link_pos.x + LINK_SPEED * delta)
 		link_pos.y = lerpf(link_pos.y, parent.player_pos.y, minf(1.0, delta * 1.5))
