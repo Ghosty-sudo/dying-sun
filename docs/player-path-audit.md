@@ -1,28 +1,28 @@
 # Dying Sun — Player-Path QoL / Maturity Audit
 
-Last updated: 2026-09-10
+Last updated: 2026-09-13
 
-This document separates machine validity from player-facing maturity. A green workflow, successful export, or deployed browser build does not by itself justify a human handoff.
+This document separates machine validity from player-facing maturity. A green workflow, successful export, or deployed browser build does not by itself justify a broad human handoff.
 
 ## Current classification
 
-- **MACHINE-VALID:** target state after every merged change; requires clean import/runtime, progression regressions, and reproducible exports.
-- **PLAYTEST-WORTHY:** **NO** at this stage. Act V still uses the generic campaign skeleton and the authored campaign has not yet received its full end-to-end player-path polish pass.
-- **RELEASE-WORTHY:** **NO**. The project remains an internal playable in authored-campaign development.
+- **MACHINE-VALID:** **YES** for the current authored five-act implementation. Clean Godot import/runtime, campaign/combat/Acts I–V regressions, touch and accelerated Web stability smokes, scripted opening playtest, Windows export, and artifact upload all pass together in CI.
+- **PLAYTEST-WORTHY:** **NO for broad campaign handoff yet.** All five acts are now authored, but two narrow real-device Web questions remain unresolved from prior human evidence: virtual-stick ownership/release on iOS and an observed browser crash during gameplay. A full end-to-end subjective campaign pass is also still needed for pacing, repetition, encounter fairness, readability, and emotional payoff now that Last Light exists.
+- **RELEASE-WORTHY:** **NO.** The game has crossed out of generic campaign-skeleton development, but target-Windows mix/performance, full campaign feel, remaining presentation consistency, save/reset UX, and known real-device playtest-surface risks still need release-candidate judgment.
 
 ## Player-path audit
 
 ### Opening and direction
 
 **Addressed**
-- Authored sector objectives no longer rely on the vague `KEEP MOVING` fallback.
+- Authored sector objectives no longer rely on the vague `KEEP MOVING` fallback in the campaign's authored routes.
 - The Breaker gate persistently explains the required input across keyboard, controller, and touch.
 - Armor and Frame Charge have readable text labels rather than relying only on bars.
-- Black Relay and Crown Engine expose live objective progress through the same player-facing HUD hierarchy.
+- Black Relay, Crown Engine, and Last Light expose live objective progress through player-facing HUD language.
+- Last Light now begins with a physical descent and memory-convergence objective rather than an enemy-clear wave.
 
 **Still needed before broad handoff**
-- Finish authored Act V.
-- Re-run a full first-ten-minute and full-campaign path audit after the final authored act is integrated.
+- Run the complete first-session/full-campaign path on the current five-act build and judge whether transitions and objective language remain clear without developer explanation.
 
 ### Controls, pause, retry, navigation
 
@@ -30,6 +30,11 @@ This document separates machine validity from player-facing maturity. A green wo
 - Mobile Web has a dedicated pause affordance rather than depending on keyboard Escape.
 - Pause has a direct checkpoint-restart path on touch and controller/keyboard.
 - Desktop/controller control hints include Breaker after Act II.
+- Automated touch ownership/recovery regressions remain green after the last mobile fixes.
+
+**Blocking broad Web handoff**
+- Confirm on a real iOS device that the virtual stick never moves without an active gesture and releases cleanly after direction changes, secondary touches, and combat-button use.
+- Confirm the browser remains stable during a short real-device combat session after the previous observed crash.
 
 **Valuable before release candidate**
 - Full input remapping rather than fixed key/button bindings.
@@ -38,24 +43,17 @@ This document separates machine validity from player-facing maturity. A green wo
 
 ### Combat and encounter readability
 
-**Needed — ongoing**
-- Hazard tells must visually precede damage and remain distinguishable from enemy projectiles.
-- Bosses must test learned mechanics rather than only adding health.
-- Route consequences must be visible mechanically during play, not only stored as flags or dialogue.
+**Addressed**
+- Authored acts replace the earlier repeated kill/link/reset campaign rhythm with traversal, system interaction, escort/support, evidence extraction, adaptive counters, and finale-route mechanics.
+- Route consequences are represented mechanically during play rather than only stored as flags or dialogue.
+- Last Light's solar-collapse pressure is visually drawn before contact and has a movement/boost answer.
+- STAY turns the finale into a moving Sol-link objective with charge support and pressure relief.
+- SEVER turns the finale into three spatial Breaker interactions whose result carries into boss stagger/attack behavior.
+- Last Light's final fight changes mechanically with the relational route instead of only changing ending text.
 
-**Addressed in Act III — Black Relay**
-- The act begins with relay stabilization under pressure instead of an enemy-clear wave.
-- The civilian choice becomes an escort objective with the defense grid intentionally dark.
-- The defense choice becomes a lattice-supported push in which the grid actively damages threats and visibly weakens Relay Saint's starting shield.
-
-**Addressed in Act IV — Crown Engine**
-- The act begins with testimony recovery under a rotating Crown scan rather than an enemy-clear wave.
-- Relationship history changes whether Sol volunteers responsibility or the machine record exposes it.
-- OPEN becomes evidence extraction; the recovered proof exposes a real stagger break point on Crown Custodian.
-- FOLLOW becomes a dangerous Frame-Charge overdrive traversal and carries that support into the boss fight.
-- Crown Custodian resolves a counterprofile from observed strike, boost, deflect, or Breaker usage instead of pretending to adapt through dialogue alone.
-- A boost-heavy player receives a telegraphed predicted landing trace with a readable answer: redirect the dash before impact.
-- A Breaker-heavy player can provoke a phase shift during a committed charge; strike and deflect profiles receive their own distinct spatial counters.
+**Subjective gate still needed**
+- Confirm on a full human campaign run that the authored variety actually reads as variety, not merely different state labels around the same combat cadence.
+- Judge whether hazard tells are early enough at real play speed, whether bosses test learned mechanics fairly, and whether the final collapse pressure is demanding rather than noisy.
 
 ### Feedback and audio
 
@@ -63,10 +61,14 @@ This document separates machine validity from player-facing maturity. A green wo
 - Breaker charge and impact have distinct procedural cues rather than generic fallback sounds.
 - Relay stabilization and defense-grid assistance have dedicated feedback tones.
 - Crown testimony recovery and Crown phase/landing responses have distinct cues.
+- Last Light adds dedicated memory-echo, Sol-link, authority-lock, and solar-break cues.
+- Act V ambience adds a fractured low layer so the finale does not reuse the earlier acts' exact sonic shape.
+- Menu/settings/pause navigation now receives lightweight confirmation feedback, and entering an ending receives a distinct final stinger.
 
 **Valuable before release candidate**
-- Replace broad procedural/fallback audio with a more authored sound identity where it materially improves strikes, bosses, warnings, UI confirmation, and act atmosphere.
-- Validate mix/readability with real speakers/headphones and interruption behavior on the actual target Windows build.
+- Validate the procedural mix/readability on real speakers and headphones, especially strikes, warnings, boss pressure, dialogue moments, and the Last Light collapse.
+- Replace any procedural/fallback cue that still reads as placeholder after listening in context; do not replace procedural audio merely for asset-count optics.
+- Validate interruption/background behavior and volume expectations on the target Windows build.
 
 ### Saving and recovery
 
@@ -75,24 +77,35 @@ This document separates machine validity from player-facing maturity. A green wo
 - Act II's Index Seal has a softlock-recovery guard.
 - Pause-driven checkpoint restart is available before death.
 - Major authored-route consequences are persisted as campaign flags before boss transitions.
+- Last Light persists its echo resolution and route consequence before the final confrontation.
 
 **Valuable before release candidate**
 - Clear save-state communication at important checkpoints.
-- A deliberate save/reset UX audit, including corrupt/incompatible save behavior.
+- A deliberate save/reset UX audit, including corrupt/incompatible save behavior and accidental NEW GAME replacement risk.
 
 ### Presentation and consistency
 
-**Still needed before broad handoff**
-- Act V needs authored spatial/mechanical identity and a climactic presentation standard above the earlier acts.
-- Continue removing prototype-feeling geometry/copy as authored rooms and transitions replace generic arena presentation.
-- Review the campaign end-to-end for abrupt state changes, temporary labels, inconsistent visual hierarchy, and repeated visual language after all acts are authored.
+**Addressed in the current pass**
+- Last Light has its own procedural spatial identity: concentric artificial-sun machinery, radial conduits, drifting motes, echo glyphs, Sol-link visuals, authority locks, collapse rings, and route-sensitive boss treatment.
+- The title screen now receives a restrained machine-city silhouette, broken orbital traces, and ash drift around the existing artificial-sun mark rather than relying only on flat menu geometry.
+- Endings receive distinct visual motifs for reconciliation, preserving Sol, preserving the city, severing the system, and burning clean.
+- A minimal framing layer adds cohesion during play without covering combat or HUD information.
+
+**Still needed before release candidate**
+- Review the whole campaign at human play speed for abrupt state changes, temporary-looking labels, repeated geometry, clutter, and hierarchy conflicts that static/code inspection cannot reliably judge.
+- Promote or cut individual presentation elements based on how they actually read on the target display rather than adding more effects by default.
 
 ### Technical and performance
 
+**Addressed / continuously gated**
+- Critical progression, combat, authored Acts I–V, touch input, accelerated Web stability, opening path, runtime, and Windows export regressions run in the same CI job.
+- Current Windows release export and artifact upload succeed from CI.
+
 **Needed before release candidate**
-- Keep all critical progression, touch, controller, runtime, authored-act, and export regressions green.
-- Investigate and clean known Godot exit-time resource leak warnings rather than normalizing them indefinitely.
+- Keep all critical gates green on the release candidate.
+- Investigate and clean meaningful Godot exit-time resource leak warnings rather than normalizing them indefinitely if they still reproduce on the release path.
 - Validate acceptable performance on modest Windows hardware representative of the intended audience.
+- Clear or deliberately scope the two remaining real-device Web issues before relying on the browser build as the primary human playtest surface.
 
 ## Deliberate omissions
 
@@ -106,8 +119,8 @@ The following are not maturity gaps for this game's intended compact identity un
 
 ## Next maturity sequence
 
-1. Validate and merge authored Act IV without promoting the build to playtest-worthy solely because CI is green.
-2. Author Act V — Last Light as an unstable-system climax rather than another wave pair.
-3. Run an end-to-end player-path polish audit across opening, combat, choices, upgrades, save/retry, pause/settings, transitions, endings, controller, and target Windows presentation.
-4. Perform an outside-in maturity comparison against appropriate released compact action games and classify remaining gaps as NEEDED / VALUABLE / DELIBERATELY OMIT.
-5. Only then decide whether the build has crossed from machine-valid to playtest-worthy.
+1. Clear the short real-device iOS gate: virtual-stick ownership/release and browser stability only; if either fails, isolate the exact observed behavior rather than guessing.
+2. Run one complete human campaign pass focused on feel, fairness, pacing, repetition, clarity, route consequence, boss readability, audio balance, and whether Last Light actually lands as a climax.
+3. Consolidate that evidence into one fix/polish pass rather than repeated tiny handoffs.
+4. Perform the target-Windows maturity pass: modest-hardware performance, audio mix, save/reset UX, controller/keyboard expectations, display behavior, and release presentation.
+5. Classify the remaining gaps as NEEDED / VALUABLE / DELIBERATELY OMIT and only then decide whether the build has crossed to `PLAYTEST-WORTHY` broadly and later `RELEASE-WORTHY`.

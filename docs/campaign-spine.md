@@ -1,6 +1,6 @@
 # Dying Sun — Campaign Spine
 
-Last updated: 2026-09-11
+Last updated: 2026-09-13
 Status: Sol-directed internal design baseline
 
 ## Product shape
@@ -62,14 +62,20 @@ Fantasy: learn what Sol did, then survive a machine that has been studying how y
 - End boss: Crown Custodian.
 
 ### V — Last Light
-Fantasy: decide what survives.
-- Descend into the artificial sun's inner control body as containment fails.
-- Encounters remix prior enemy families under unstable conditions.
-- Final confrontation is both mechanical and relational.
-- Ending options are gated by actions across the campaign, not a single final dialogue selector.
-- Baseline endings: Preserve Sol / Preserve City / Sever the System / Burn Everything Clean.
-- A stronger reconciliation ending may exist, but only if earned through difficult cross-act conditions.
-- **Authored-act treatment is still pending.** Existing state-machine content does not yet satisfy this description by itself.
+Fantasy: decide what survives while the artificial sun is physically coming apart around you.
+- Descend into the artificial sun's inner control body instead of entering another generic enemy-clear wave.
+- A repeating solar-collapse ring sweeps the arena. Its expansion is visible before contact and asks the player to reposition or boost through it rather than tanking unexplained damage.
+- Three memory echoes replay consequences from the earlier campaign under pressure. The active enemy mix and Sol's language reflect whether the player preserved or burned the archive, powered civilians or the defense lattice, and opened or deferred Crown truth.
+- Resolving the three echoes exposes the final relational decision, but that decision does not erase earlier evidence. The final route then becomes playable immediately:
+  - **STAY:** carry Sol's core link through the collapse by remaining close enough to keep it moving. The link restores Frame Charge, clears overwhelming projectile pressure at intervals, and turns the finale into a moving partnership rather than an escort NPC with hidden health.
+  - **SEVER:** enter the authority spine and use fully charged Breaker releases inside three visible lock glyphs. Each destroyed lock strips system authority and changes the Last Light confrontation rather than simply changing dialogue.
+- Last Light is the final boss, but the route changes how it fights:
+  - STAY keeps Sol mechanically present through periodic support; if reconciliation conditions were already earned across the campaign, the support link becomes stronger and the third ending path is legible before resolution.
+  - SEVER begins with Last Light partially exposed and continues to desynchronize its attack cadence and stagger state because the player physically removed its authority keys.
+- The climax has its own visual language: concentric artificial-sun machinery, radial conduits, drifting gold motes, memory glyphs, the cyan Sol-link, authority-lock marks, collapse rings, and route-specific boss halo treatment.
+- The climax also has dedicated procedural audio cues for memory echoes, Sol-link pulses, authority-lock destruction, and the solar break, plus a more fractured Act V ambience layer.
+- Ending eligibility remains cumulative rather than a single final selector. Baseline endings remain Preserve Sol / Preserve City / Sever the System / Burn Everything Clean, with reconciliation available only when the required cross-act evidence was actually earned.
+- Authored Act V is machine-covered by a dedicated STAY/SEVER sector smoke and the same full campaign/export CI gate as the earlier acts.
 
 ## Combat growth
 Player growth should create new decisions rather than linear stat inflation.
