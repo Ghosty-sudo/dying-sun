@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource path="res://scripts/game.gd" type="Script" id="1_game"]
 [ext_resource path="res://scripts/breaker_controller.gd" type="Script" id="2_breaker"]
@@ -10,6 +10,7 @@
 [ext_resource path="res://scripts/act4_director.gd" type="Script" id="8_act4"]
 [ext_resource path="res://scripts/crown_boost_counter.gd" type="Script" id="9_boost_counter"]
 [ext_resource path="res://scripts/melee_contact_guard.gd" type="Script" id="10_melee_guard"]
+[ext_resource path="res://scripts/act5_director.gd" type="Script" id="11_act5"]
 
 [node name="DyingSun" type="Node2D"]
 script = ExtResource("1_game")
@@ -28,6 +29,9 @@ script = ExtResource("6_act3")
 
 [node name="Act4Director" type="Node2D" parent="."]
 script = ExtResource("8_act4")
+
+[node name="Act5Director" type="Node2D" parent="."]
+script = ExtResource("11_act5")
 
 [node name="CrownBoostCounter" type="Node2D" parent="."]
 script = ExtResource("9_boost_counter")

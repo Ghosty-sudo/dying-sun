@@ -138,6 +138,10 @@ func sfx_gain(id: String) -> float:
 		"relay_pulse": return 0.50
 		"crown_truth": return 0.48
 		"crown_phase": return 0.56
+		"last_light_echo": return 0.54
+		"sol_link": return 0.58
+		"sever_lock": return 0.64
+		"solar_break": return 0.72
 		_: return 0.58
 
 func build_sfx(id: String) -> AudioStreamWAV:
@@ -158,6 +162,10 @@ func build_sfx(id: String) -> AudioStreamWAV:
 		"relay_pulse": return synth_sweep(690.0, 320.0, 0.15, 0.46, "sine")
 		"crown_truth": return synth_sweep(520.0, 1060.0, 0.30, 0.40, "sine")
 		"crown_phase": return synth_sweep(820.0, 115.0, 0.22, 0.54, "noise")
+		"last_light_echo": return synth_sweep(280.0, 1120.0, 0.34, 0.48, "sine")
+		"sol_link": return synth_sweep(210.0, 720.0, 0.30, 0.50, "sine")
+		"sever_lock": return synth_sweep(145.0, 32.0, 0.34, 0.90, "square")
+		"solar_break": return synth_sweep(58.0, 460.0, 0.72, 0.82, "noise")
 		_: return synth_sweep(220.0, 220.0, 0.10, 0.4, "sine")
 
 func synth_sweep(start_hz: float, end_hz: float, seconds: float, amplitude: float, waveform: String) -> AudioStreamWAV:
@@ -200,8 +208,12 @@ func build_ambience(act: int) -> AudioStreamWAV:
 		var slow: float = sin(TAU * base * time) * 0.44
 		var layer: float = sin(TAU * fifth * time + sin(time * 0.7) * 0.4) * 0.20
 		var shimmer: float = sin(TAU * high * time) * (0.06 + 0.03 * sin(time * 1.9))
+		var fracture: float = 0.0
+		if act == 5:
+			fracture = sin(TAU * base * 0.5 * time + sin(time * 0.33) * 0.8) * 0.12
+			fracture += sin(TAU * 1.75 * time) * 0.035
 		var pulse: float = 0.80 + 0.20 * sin(TAU * (0.22 + float(act) * 0.025) * time)
-		var sample := int(clampf((slow + layer + shimmer) * pulse * 0.34, -1.0, 1.0) * 32767.0)
+		var sample := int(clampf((slow + layer + shimmer + fracture) * pulse * 0.34, -1.0, 1.0) * 32767.0)
 		data.encode_s16(i * 2, sample)
 	var stream := AudioStreamWAV.new()
 	stream.format = AudioStreamWAV.FORMAT_16_BITS
