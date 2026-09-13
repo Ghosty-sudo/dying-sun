@@ -1,5 +1,7 @@
 extends Node2D
 
+const Campaign := preload("res://scripts/campaign_data.gd")
+
 var last_ui_mode := ""
 var last_menu_selection := -1
 var last_settings_selection := -1
