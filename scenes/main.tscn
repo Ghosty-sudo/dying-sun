@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource path="res://scripts/game.gd" type="Script" id="1_game"]
 [ext_resource path="res://scripts/breaker_controller.gd" type="Script" id="2_breaker"]
@@ -11,6 +11,7 @@
 [ext_resource path="res://scripts/crown_boost_counter.gd" type="Script" id="9_boost_counter"]
 [ext_resource path="res://scripts/melee_contact_guard.gd" type="Script" id="10_melee_guard"]
 [ext_resource path="res://scripts/act5_director.gd" type="Script" id="11_act5"]
+[ext_resource path="res://scripts/presentation_polish.gd" type="Script" id="12_presentation"]
 
 [node name="DyingSun" type="Node2D"]
 script = ExtResource("1_game")
@@ -38,6 +39,9 @@ script = ExtResource("9_boost_counter")
 
 [node name="PlayerPathPolish" type="Node2D" parent="."]
 script = ExtResource("7_polish")
+
+[node name="PresentationPolish" type="Node2D" parent="."]
+script = ExtResource("12_presentation")
 
 [node name="TouchInputAdapter" type="Node" parent="."]
 script = ExtResource("5_touch")
