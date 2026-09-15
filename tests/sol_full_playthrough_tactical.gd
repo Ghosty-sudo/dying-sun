@@ -7,6 +7,27 @@ extends "res://tests/sol_full_playthrough.gd"
 var tactical_calls := 0
 var damage_sources: Dictionary = {}
 
+func simulate_frame() -> void:
+	if failed:
+		return
+	# Keep the accelerated player-bot faithful to live process priority. The Act
+	# II checkpoint controller runs before SectorDirector in the shipped scene.
+	router._process(DT)
+	var act2_checkpoint = game.get_node_or_null("Act2BossCheckpoint")
+	if act2_checkpoint != null:
+		act2_checkpoint._process(DT)
+	sector._process(DT)
+	act3._process(DT)
+	act4._process(DT)
+	act5._process(DT)
+	if crown_boost != null:
+		crown_boost._process(DT)
+	breaker._process(DT)
+	game._process(DT)
+	sim_time += DT
+	observe_metrics()
+	observe_transition()
+
 func observe_metrics() -> void:
 	if last_hp > 0 and game.player_hp < last_hp:
 		var lost := last_hp - int(game.player_hp)
