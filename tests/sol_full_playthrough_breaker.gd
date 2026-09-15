@@ -42,6 +42,15 @@ func simulate_frame() -> void:
 	observe_metrics()
 	observe_transition()
 
+func combat_step() -> void:
+	# Every tactical decision must consume simulated time. This catches any
+	# policy branch that only reasons/returns and prevents a zero-time decision
+	# spin from hiding the actual fight behind the harness call budget.
+	var before := sim_time
+	super()
+	if not failed and is_equal_approx(sim_time, before):
+		simulate_frame()
+
 func quick_breaker(held: float) -> bool:
 	if int(game.current_act) < 2 or game.player_charge < 18.0 or breaker.charging or game.attack_cooldown > 0.0:
 		return false
