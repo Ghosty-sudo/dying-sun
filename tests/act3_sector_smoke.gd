@@ -30,8 +30,9 @@ func _ready() -> void:
 	await get_tree().process_frame
 
 	var director = game.get_node_or_null("Act3Director")
-	if director == null:
-		fail("Act3Director missing from main scene")
+	var boss_checkpoint = game.get_node_or_null("Act3BossCheckpoint")
+	if director == null or boss_checkpoint == null:
+		fail("Act III requires Act3Director and Act3BossCheckpoint")
 		return
 	if str(game.stage) != "sector_relay_entry" or not game.enemies.is_empty():
 		fail("Act III did not replace generic wave_a with relay traversal")
@@ -77,7 +78,10 @@ func _ready() -> void:
 		fail("civilian choice did not become an escort objective")
 		return
 
+	game.player_hp = 2
+	game.player_charge = 5.0
 	director.escort_pos = Vector2(director.RELAY_EXIT_X, 180)
+	await get_tree().process_frame
 	await get_tree().process_frame
 	if str(game.stage) != "boss" or str(game.boss_name) != "RELAY SAINT":
 		fail("civilian feed did not reach Relay Saint")
@@ -87,6 +91,29 @@ func _ready() -> void:
 		return
 	if not GameState.has_flag("civilian_feed_completed"):
 		fail("civilian feed completion was not persisted")
+		return
+	if not GameState.has_flag("act3_relay_saint_checkpoint"):
+		fail("Relay Saint entry did not persist its retry checkpoint")
+		return
+	if game.player_hp != game.max_hp() or game.player_charge < game.max_charge() - 0.01:
+		fail("civilian-route Relay Saint attempt was not stabilized")
+		return
+
+	# A boss death must return directly to Relay Saint, not replay the escort.
+	game.hurt_player(99)
+	if not game.dead:
+		fail("Act III checkpoint test could not kill the player")
+		return
+	game.restart_from_checkpoint()
+	await get_tree().process_frame
+	if str(game.stage) != "boss" or str(game.boss_name) != "RELAY SAINT":
+		fail("Act III boss retry replayed the civilian feed instead of restoring Relay Saint")
+		return
+	if game.enemies.size() != 1 or int(game.enemies[0].get("hp", 0)) != 28:
+		fail("civilian-route retry did not preserve full-integrity Relay Saint")
+		return
+	if game.player_hp != game.max_hp() or game.player_charge < game.max_charge() - 0.01:
+		fail("Act III civilian boss retry did not restore full combat resources")
 		return
 
 	# Defense route: the lattice should actively damage threats during the push
@@ -98,6 +125,7 @@ func _ready() -> void:
 	game.dead = false
 	GameState.flags.erase("civilian_grid_preserved")
 	GameState.flags.erase("civilian_feed_completed")
+	GameState.flags.erase("act3_relay_saint_checkpoint")
 	GameState.set_flag("defense_lattice_powered")
 	game.stage = "wave_b"
 	await get_tree().process_frame
@@ -113,8 +141,11 @@ func _ready() -> void:
 		fail("powered defense lattice did not mechanically assist combat")
 		return
 
+	game.player_hp = 1
+	game.player_charge = 3.0
 	director.route_elapsed = director.DEFENSE_MIN_TIME
 	game.player_pos = Vector2(570, 180)
+	await get_tree().process_frame
 	await get_tree().process_frame
 	if str(game.stage) != "boss" or str(game.boss_name) != "RELAY SAINT":
 		fail("defense push did not reach Relay Saint")
@@ -127,6 +158,22 @@ func _ready() -> void:
 		return
 	if not GameState.has_flag("defense_push_completed"):
 		fail("defense push completion was not persisted")
+		return
+	if not GameState.has_flag("act3_relay_saint_checkpoint"):
+		fail("defense route did not persist the Relay Saint checkpoint")
+		return
+	if game.player_hp != game.max_hp() or game.player_charge < game.max_charge() - 0.01:
+		fail("defense-route Relay Saint attempt was not stabilized")
+		return
+
+	game.hurt_player(99)
+	game.restart_from_checkpoint()
+	await get_tree().process_frame
+	if str(game.stage) != "boss" or str(game.boss_name) != "RELAY SAINT":
+		fail("defense-route boss retry replayed the lattice push")
+		return
+	if game.enemies.size() != 1 or int(game.enemies[0].get("hp", 0)) != 24:
+		fail("defense-route retry lost the lattice's boss consequence")
 		return
 
 	game.queue_free()
