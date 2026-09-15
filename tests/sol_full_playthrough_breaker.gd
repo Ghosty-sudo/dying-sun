@@ -4,6 +4,16 @@ extends "res://tests/sol_full_playthrough_tactical.gd"
 # treating it as an Act II door key. This still presses and releases the live
 # touch binding through InputRouter; the bot never calls perform_breaker().
 
+func simulate_frame() -> void:
+	super()
+	if failed:
+		return
+	# The accelerated base loop manually drives gameplay processors. Mirror the
+	# live scene's post-game ArchivistPacing priority here as well.
+	var archivist_pacing = game.get_node_or_null("ArchivistPacing")
+	if archivist_pacing != null:
+		archivist_pacing._process(DT)
+
 func quick_breaker(held: float) -> bool:
 	if int(game.current_act) < 2 or game.player_charge < 18.0 or breaker.charging or game.attack_cooldown > 0.0:
 		return false
