@@ -1,7 +1,7 @@
 extends "res://tests/sol_full_playthrough_clear.gd"
 
 # The full-playthrough harness runs the live processors deterministically inside
-# one test frame. Include every post-game pacing controller that the shipped
+# one test frame. Include every checkpoint/pacing controller that the shipped
 # scene normally receives from Godot's process scheduler.
 
 func simulate_frame() -> void:
@@ -9,6 +9,10 @@ func simulate_frame() -> void:
 		return
 
 	router._process(DT)
+
+	var act5_checkpoint = game.get_node_or_null("Act5BossCheckpoint")
+	if act5_checkpoint != null:
+		act5_checkpoint._process(DT)
 
 	var act3_checkpoint = game.get_node_or_null("Act3BossCheckpoint")
 	if act3_checkpoint != null:
