@@ -28,6 +28,14 @@ func simulate_frame() -> void:
 	observe_metrics()
 	observe_transition()
 
+func recover_from_death() -> void:
+	# A checkpoint retry is meaningful progression even when the stage label stays
+	# "boss". Give each restored attempt its own stall budget instead of adding
+	# every boss life into one cumulative 70-second watchdog.
+	super()
+	if not failed:
+		stage_started = sim_time
+
 func handle_module() -> void:
 	# Make actual build decisions instead of preserving the original arbitrary
 	# smoke-test picks. Early Dying Sun is projectile-heavy, so cheaper Boost is
