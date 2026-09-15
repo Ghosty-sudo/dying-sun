@@ -5,14 +5,38 @@ extends "res://tests/sol_full_playthrough_tactical.gd"
 # touch binding through InputRouter; the bot never calls perform_breaker().
 
 func simulate_frame() -> void:
-	super()
 	if failed:
 		return
-	# The accelerated base loop manually drives gameplay processors. Mirror the
-	# live scene's post-game ArchivistPacing priority here as well.
+
+	# Mirror the live scene's explicit process ordering. The accelerated harness
+	# drives processors manually, so every checkpoint/pacing node added to the
+	# shipped scene must also participate here or retries diverge from real play.
+	router._process(DT)
+
+	var act3_checkpoint = game.get_node_or_null("Act3BossCheckpoint")
+	if act3_checkpoint != null:
+		act3_checkpoint._process(DT)
+
+	var act2_checkpoint = game.get_node_or_null("Act2BossCheckpoint")
+	if act2_checkpoint != null:
+		act2_checkpoint._process(DT)
+
+	sector._process(DT)
+	act3._process(DT)
+	act4._process(DT)
+	act5._process(DT)
+	if crown_boost != null:
+		crown_boost._process(DT)
+	breaker._process(DT)
+	game._process(DT)
+
 	var archivist_pacing = game.get_node_or_null("ArchivistPacing")
 	if archivist_pacing != null:
 		archivist_pacing._process(DT)
+
+	sim_time += DT
+	observe_metrics()
+	observe_transition()
 
 func quick_breaker(held: float) -> bool:
 	if int(game.current_act) < 2 or game.player_charge < 18.0 or breaker.charging or game.attack_cooldown > 0.0:
