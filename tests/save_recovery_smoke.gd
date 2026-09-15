@@ -1,9 +1,9 @@
-extends SceneTree
+extends Node
 
 func fail(message: String) -> void:
 	push_error("SAVE_RECOVERY FAILED: " + message)
 	SaveManager.clear_campaign()
-	quit(1)
+	get_tree().quit(1)
 
 func write_corrupt_primary() -> bool:
 	var file := FileAccess.open(SaveManager.SAVE_PATH, FileAccess.WRITE)
@@ -13,7 +13,7 @@ func write_corrupt_primary() -> bool:
 	file.flush()
 	return true
 
-func _init() -> void:
+func _ready() -> void:
 	SaveManager.clear_campaign()
 	GameState.reset_campaign()
 
@@ -68,4 +68,4 @@ func _init() -> void:
 
 	SaveManager.clear_campaign()
 	print("Dying Sun save recovery smoke passed")
-	quit(0)
+	get_tree().quit(0)
