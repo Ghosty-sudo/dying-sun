@@ -50,6 +50,17 @@ jobs:
           fi
           grep -F "Dying Sun campaign state smoke passed" godot-state-smoke.log
 
+      - name: Save recovery smoke
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 30s godot --headless --path . --script res://tests/save_recovery_smoke.gd 2>&1 | tee godot-save-recovery.log
+          if grep -E "SCRIPT ERROR:|Parse Error:|SAVE_RECOVERY FAILED|Failed to load script|Failed loading resource" godot-save-recovery.log; then
+            echo "Save recovery smoke failed"
+            exit 1
+          fi
+          grep -F "Dying Sun save recovery smoke passed" godot-save-recovery.log
+
       - name: Full campaign branch smoke
         shell: bash
         run: |
