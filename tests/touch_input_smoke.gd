@@ -4,13 +4,9 @@ func fail(message: String) -> void:
 	push_error("TOUCH_INPUT FAILED: " + message)
 	get_tree().quit(1)
 
-func send_to_runtime(game, adapter, event: InputEvent) -> void:
-	# Match the existing parent+adapter handling path, then force the adapter's
-	# authoritative pre-gameplay sync so the assertion sees the state the player
-	# will actually move with.
-	game._input(event)
-	adapter._input(event)
-	adapter._process(0.0)
+func send_to_runtime(router, event: InputEvent) -> void:
+	router._input(event)
+	router._process(0.0)
 
 func screen_touch(index: int, position: Vector2, pressed: bool) -> InputEventScreenTouch:
 	var event := InputEventScreenTouch.new()
@@ -54,43 +50,58 @@ func _ready() -> void:
 	game.start_new_game()
 	await get_tree().process_frame
 
-	var adapter = game.get_node_or_null("TouchInputAdapter")
-	if adapter == null:
-		fail("TouchInputAdapter missing from main scene")
+	var router = game.get_node_or_null("InputRouter")
+	if router == null:
+		fail("InputRouter missing from main scene")
+		return
+	if game.get_node_or_null("TouchInputAdapter") != null or game.get_node_or_null("ControllerAdapter") != null:
+		fail("legacy input adapters are still mounted")
 		return
 	if str(game.stage) != "sector_intake_walk":
-		fail("Act I did not reach traversal before touch test")
+		fail("Act I did not reach traversal before input test")
 		return
 
-	# Normal real-screen movement still works.
+	# Normal real-screen movement still works through the one live input owner.
 	var start_pos: Vector2 = game.player_pos
-	send_to_runtime(game, adapter, screen_touch(3, Vector2(88, 286), true))
-	send_to_runtime(game, adapter, screen_drag(3, Vector2(140, 286), Vector2(52, 0)))
+	send_to_runtime(router, screen_touch(3, Vector2(88, 286), true))
+	send_to_runtime(router, screen_drag(3, Vector2(140, 286), Vector2(52, 0)))
 	game.update_player(0.25)
 	if game.player_pos.x <= start_pos.x:
 		fail("screen touch + drag did not move player")
 		return
-	if game.touch_move_id != 3 or str(adapter.active_source) != "screen":
+	if game.touch_move_id != 3 or str(router.active_source) != "screen":
 		fail("real screen pointer did not own virtual stick")
 		return
 
-	# iOS/WebKit can emit a synthetic mouse copy of the same finger gesture.
-	# It must not steal ownership or change the movement vector.
+	# A second finger can attack while movement ownership stays with the left
+	# finger. This is the primary multi-touch combat path on mobile.
+	var before_action_move: Vector2 = game.touch_move
+	game.attack_cooldown = 0.0
+	send_to_runtime(router, screen_touch(20, Vector2(562, 282), true))
+	if game.attack_cooldown <= 0.0:
+		fail("second-finger attack did not reach combat action")
+		return
+	if game.touch_move_id != 3 or game.touch_move.distance_to(before_action_move) > 0.01:
+		fail("second-finger attack changed virtual-stick ownership")
+		return
+	send_to_runtime(router, screen_touch(20, Vector2(562, 282), false))
+
+	# iOS/WebKit can emit a synthetic mouse copy of the same finger gesture. It
+	# must not steal ownership or replay an action.
 	var before_mouse_copy: Vector2 = game.touch_move
-	send_to_runtime(game, adapter, mouse_button(Vector2(92, 286), true))
-	send_to_runtime(game, adapter, mouse_motion(Vector2(42, 235), Vector2(-50, -51)))
-	if game.touch_move_id != 3 or str(adapter.active_source) != "screen":
+	send_to_runtime(router, mouse_button(Vector2(92, 286), true))
+	send_to_runtime(router, mouse_motion(Vector2(42, 235), Vector2(-50, -51)))
+	if game.touch_move_id != 3 or str(router.active_source) != "screen":
 		fail("touch-derived mouse stream stole real screen pointer")
 		return
 	if game.touch_move.distance_to(before_mouse_copy) > 0.01:
 		fail("touch-derived mouse motion changed real screen movement")
 		return
 
-	# A second finger in the left half must not hijack the active stick. The
-	# parent gameplay script historically wrote this state too, so this verifies
-	# the adapter restores its authoritative pointer before movement integration.
-	send_to_runtime(game, adapter, screen_touch(4, Vector2(120, 260), true))
-	send_to_runtime(game, adapter, screen_drag(4, Vector2(75, 220), Vector2(-45, -40)))
+	# A second finger in the left half must not hijack the active stick, and it
+	# must remain blocked from late drag recovery until that finger is released.
+	send_to_runtime(router, screen_touch(4, Vector2(120, 260), true))
+	send_to_runtime(router, screen_drag(4, Vector2(75, 220), Vector2(-45, -40)))
 	if game.touch_move_id != 3:
 		fail("secondary finger hijacked active virtual stick")
 		return
@@ -100,60 +111,117 @@ func _ready() -> void:
 
 	# Releasing the owning finger must immediately zero the stick. A late drag
 	# for that just-released pointer must not resurrect ghost movement.
-	send_to_runtime(game, adapter, screen_touch(3, Vector2(140, 286), false))
+	send_to_runtime(router, screen_touch(3, Vector2(140, 286), false))
 	if game.touch_move_id != -1 or game.touch_move != Vector2.ZERO:
 		fail("screen touch release left joystick captured")
 		return
-	send_to_runtime(game, adapter, screen_drag(3, Vector2(148, 286), Vector2(8, 0)))
+	send_to_runtime(router, screen_drag(3, Vector2(148, 286), Vector2(8, 0)))
 	if game.touch_move_id != -1 or game.touch_move != Vector2.ZERO:
 		fail("late drag resurrected released joystick")
 		return
+	# The other already-blocked left finger must not take over after owner release.
+	send_to_runtime(router, screen_drag(4, Vector2(70, 210), Vector2(-5, -10)))
+	if game.touch_move_id != -1:
+		fail("blocked secondary finger recovered movement after owner release")
+		return
+	send_to_runtime(router, screen_touch(4, Vector2(70, 210), false))
 
 	# A genuinely lost initial screen press can still be recovered from a new
 	# drag stream, preserving the iOS/Web recovery behavior.
 	game.player_pos = Vector2(86, 182)
 	start_pos = game.player_pos
-	send_to_runtime(game, adapter, screen_drag(9, Vector2(150, 286), Vector2(48, 0)))
+	send_to_runtime(router, screen_drag(9, Vector2(150, 286), Vector2(48, 0)))
 	game.update_player(0.25)
 	if game.player_pos.x <= start_pos.x:
 		fail("lost-press recovery drag did not move player")
 		return
-	send_to_runtime(game, adapter, screen_touch(9, Vector2(150, 286), false))
+	send_to_runtime(router, screen_touch(9, Vector2(150, 286), false))
 
-	# When no real screen stream is present, preserve the Web mouse-compatible
-	# fallback, including iOS motion events whose button_mask is zero.
-	adapter.last_screen_event_ms = -1000000
+	# Preserve the Web mouse-compatible fallback, including iOS motion events
+	# whose button_mask is zero. Headless CI forces this surface explicitly.
+	router.last_screen_event_ms = -1000000
+	router.force_mouse_touch_fallback = true
 	game.player_pos = Vector2(86, 182)
 	start_pos = game.player_pos
-	send_to_runtime(game, adapter, mouse_button(Vector2(90, 286), true))
-	send_to_runtime(game, adapter, mouse_motion(Vector2(145, 286), Vector2(55, 0)))
+	send_to_runtime(router, mouse_button(Vector2(90, 286), true))
+	send_to_runtime(router, mouse_motion(Vector2(145, 286), Vector2(55, 0)))
 	game.update_player(0.25)
 	if game.player_pos.x <= start_pos.x:
 		fail("mouse-compatible Web drag without button mask did not move player")
 		return
-	if str(adapter.active_source) != "mouse":
+	if str(router.active_source) != "mouse":
 		fail("mouse-compatible fallback did not own stick")
 		return
 
 	# If a real screen event appears after fallback capture, it must supersede
-	# the synthetic source deterministically.
-	send_to_runtime(game, adapter, screen_touch(12, Vector2(95, 286), true))
-	send_to_runtime(game, adapter, screen_drag(12, Vector2(95, 238), Vector2(0, -48)))
-	if game.touch_move_id != 12 or str(adapter.active_source) != "screen":
+	# the fallback deterministically.
+	send_to_runtime(router, screen_touch(12, Vector2(95, 286), true))
+	send_to_runtime(router, screen_drag(12, Vector2(95, 238), Vector2(0, -48)))
+	if game.touch_move_id != 12 or str(router.active_source) != "screen":
 		fail("real screen stream did not supersede mouse fallback")
 		return
 	if game.touch_move.y >= -0.5:
 		fail("real screen stream did not control movement after superseding fallback")
 		return
 
-	# Entering a state that should not accept movement must scrub any stale
-	# vector before gameplay can resume later.
+	# Pausing is part of the same router and must scrub movement immediately.
+	send_to_runtime(router, screen_touch(30, Vector2(590, 45), true))
+	if not game.paused:
+		fail("touch pause did not pause gameplay")
+		return
+	if game.touch_move_id != -1 or game.touch_move != Vector2.ZERO:
+		fail("pause did not clear movement ownership")
+		return
+	send_to_runtime(router, screen_touch(30, Vector2(590, 45), false))
+
+	# Touch restart from pause is routed centrally and leaves no stale pointer.
+	game.player_pos = Vector2(300, 180)
+	send_to_runtime(router, screen_touch(31, Vector2(320, 300), true))
+	if game.paused:
+		fail("checkpoint restart left game paused")
+		return
+	if game.player_pos.distance_to(Vector2(92, 182)) > 1.0 and str(game.stage) != "sector_intake_walk":
+		fail("checkpoint restart did not rebuild gameplay state")
+		return
+	send_to_runtime(router, screen_touch(31, Vector2(320, 300), false))
+
+	# Dialogue/non-gameplay states scrub movement before gameplay can resume.
+	send_to_runtime(router, screen_touch(40, Vector2(88, 286), true))
+	send_to_runtime(router, screen_drag(40, Vector2(136, 286), Vector2(48, 0)))
 	game.dialogue_open = true
-	adapter._process(0.0)
+	router._process(0.0)
 	if game.touch_move_id != -1 or game.touch_move != Vector2.ZERO:
 		fail("non-gameplay state did not clear stale joystick ownership")
 		return
 	game.dialogue_open = false
+	send_to_runtime(router, screen_touch(40, Vector2(136, 286), false))
+
+	# Breaker hold/release also routes through the same owner. A breaker finger
+	# is blocked from becoming movement if it drifts left before release.
+	game.current_act = 2
+	GameState.act = 2
+	game.player_charge = 100.0
+	var breaker = game.get_node_or_null("BreakerController")
+	if breaker == null:
+		fail("BreakerController missing")
+		return
+	send_to_runtime(router, screen_touch(50, Vector2(562, 218), true))
+	if not breaker.charging:
+		fail("touch breaker press did not begin charge")
+		return
+	breaker.charge_time = 0.40
+	send_to_runtime(router, screen_drag(50, Vector2(180, 218), Vector2(-382, 0)))
+	if game.touch_move_id != -1:
+		fail("breaker pointer became movement while held")
+		return
+	var charge_before_release: float = game.player_charge
+	send_to_runtime(router, screen_touch(50, Vector2(180, 218), false))
+	if breaker.charging:
+		fail("touch breaker release did not end charge")
+		return
+	if game.player_charge >= charge_before_release:
+		fail("charged breaker release did not spend frame charge")
+		return
 
 	game.queue_free()
 	SaveManager.clear_campaign()
