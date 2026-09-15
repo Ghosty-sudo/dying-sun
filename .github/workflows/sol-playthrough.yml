@@ -38,7 +38,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          timeout 120s godot --headless --path . res://tests/sol_full_playthrough.tscn 2>&1 | tee godot-sol-playthrough.log
+          timeout 25s godot --headless --path . res://tests/sol_full_playthrough.tscn 2>&1 | tee godot-sol-playthrough.log
           if grep -E "SCRIPT ERROR:|Parse Error:|SOL_PLAYTHROUGH FAILED|ERROR:|Failed to load script|Failed loading resource" godot-sol-playthrough.log; then
             echo "Sol full campaign playthrough failed"
             exit 1
