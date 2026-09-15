@@ -25,8 +25,9 @@ func _ready() -> void:
 
 	var director = game.get_node_or_null("SectorDirector")
 	var breaker = game.get_node_or_null("BreakerController")
-	if director == null or breaker == null:
-		fail("Act II requires SectorDirector and BreakerController")
+	var boss_checkpoint = game.get_node_or_null("Act2BossCheckpoint")
+	if director == null or breaker == null or boss_checkpoint == null:
+		fail("Act II requires SectorDirector, BreakerController, and Act2BossCheckpoint")
 		return
 	if str(game.stage) != "sector_memory_entry" or not game.enemies.is_empty():
 		fail("Act II did not replace generic wave_a with Memory Works traversal")
@@ -104,8 +105,11 @@ func _ready() -> void:
 		fail("preserve choice did not branch into the index-core hold objective")
 		return
 
+	game.player_hp = 2
+	game.player_charge = 7.0
 	game.player_pos = director.MEMORY_CORE_POS
 	director.archive_hold = director.ARCHIVE_HOLD_GOAL
+	await get_tree().process_frame
 	await get_tree().process_frame
 	if str(game.stage) != "boss" or str(game.boss_name) != "THE ARCHIVIST":
 		fail("preserve route did not reach The Archivist")
@@ -113,7 +117,29 @@ func _ready() -> void:
 	if game.enemies.size() != 1 or int(game.enemies[0].get("hp", 0)) != 24:
 		fail("preserved archive should leave The Archivist at full integrity")
 		return
+	if not GameState.has_flag("act2_archivist_checkpoint"):
+		fail("Archivist entry did not persist the Act II boss checkpoint")
+		return
+	if game.player_hp != game.max_hp() or game.player_charge < game.max_charge() - 0.01:
+		fail("Act II boss checkpoint did not stabilize the first attempt")
+		return
 
+	# A death at The Archivist must restore the boss directly rather than replaying
+	# the five-second hold and its reinforcements.
+	game.hurt_player(99)
+	if not game.dead:
+		fail("Act II checkpoint test could not kill the player")
+		return
+	game.restart_from_checkpoint()
+	await get_tree().process_frame
+	if str(game.stage) != "boss" or str(game.boss_name) != "THE ARCHIVIST":
+		fail("Act II boss retry replayed the route consequence instead of restoring The Archivist")
+		return
+	if game.player_hp != game.max_hp() or game.player_charge < game.max_charge() - 0.01:
+		fail("Act II boss retry did not restore full combat resources")
+		return
+
+	# Reset only route-specific state so the same smoke can verify the burn branch.
 	game.enemies.clear()
 	game.projectiles.clear()
 	game.dialogue_open = false
@@ -121,6 +147,7 @@ func _ready() -> void:
 	game.dead = false
 	GameState.flags.erase("archive_preserved")
 	GameState.flags.erase("archive_hold_completed")
+	GameState.flags.erase("act2_archivist_checkpoint")
 	GameState.set_flag("archive_burned")
 	game.stage = "wave_b"
 	await get_tree().process_frame
@@ -131,13 +158,22 @@ func _ready() -> void:
 		fail("purge route did not stage its pursuing threat")
 		return
 
+	game.player_hp = 1
+	game.player_charge = 2.0
 	game.player_pos = Vector2(570, 180)
+	await get_tree().process_frame
 	await get_tree().process_frame
 	if str(game.stage) != "boss" or str(game.boss_name) != "THE ARCHIVIST":
 		fail("purge run did not reach The Archivist")
 		return
 	if game.enemies.size() != 1 or int(game.enemies[0].get("hp", 0)) != 21:
 		fail("burn route did not carry its immediate cost/advantage into the boss")
+		return
+	if not GameState.has_flag("act2_archivist_checkpoint"):
+		fail("burn route did not share the Archivist retry checkpoint")
+		return
+	if game.player_hp != game.max_hp() or game.player_charge < game.max_charge() - 0.01:
+		fail("burn-route Archivist attempt was not stabilized")
 		return
 
 	game.queue_free()
