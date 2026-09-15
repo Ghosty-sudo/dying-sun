@@ -9,6 +9,7 @@ const STICK_RADIUS := 48.0
 const MOUSE_POINTER_ID := -2
 const SCREEN_MOUSE_SUPPRESS_MS := 650
 const RELEASE_RECOVERY_GUARD_MS := 180
+const TRANSIENT_RECOVERY_GUARD_MS := 350
 const JOY_NAV_THRESHOLD := 0.72
 
 const TOUCH_ATTACK_CENTER := Vector2(562.0, 282.0)
@@ -30,6 +31,7 @@ var blocked_drag_ids: Dictionary = {}
 var last_screen_event_ms := -1000000
 var last_released_screen_id := -999
 var last_release_ms := -1000000
+var recovery_block_until_ms := -1
 
 # Test-only escape hatch used by headless smoke coverage. Runtime never toggles it.
 var force_mouse_touch_fallback := false
@@ -71,11 +73,13 @@ func _process(_delta: float) -> void:
 		return
 	if not gameplay_accepts_movement(parent):
 		clear_movement_authority()
+		recovery_block_until_ms = maxi(recovery_block_until_ms, now_ms() + TRANSIENT_RECOVERY_GUARD_MS)
 	elif active_source != "none" and int(parent.touch_move_id) == -1 and Vector2(parent.touch_move) == Vector2.ZERO:
 		# The gameplay runtime intentionally clears its compatibility mirror when
 		# resetting a checkpoint/act. Treat that as a request to clear ownership
 		# instead of resurrecting an old vector on the next frame.
 		clear_movement_authority()
+		recovery_block_until_ms = now_ms() + TRANSIENT_RECOVERY_GUARD_MS
 	sync_parent()
 
 func _notification(what: int) -> void:
@@ -139,11 +143,18 @@ func screen_stream_recent() -> bool:
 	return now_ms() - last_screen_event_ms <= SCREEN_MOUSE_SUPPRESS_MS
 
 func can_recover_drag(pointer_id: int) -> bool:
+	if now_ms() < recovery_block_until_ms:
+		return false
 	if blocked_drag_ids.has(pointer_id):
 		return false
 	return not (pointer_id == last_released_screen_id and now_ms() - last_release_ms <= RELEASE_RECOVERY_GUARD_MS)
 
 func route_pointer_press(parent, pos: Vector2, pointer_id: int, source: String) -> void:
+	# A real new press is the only event allowed to clear a prior release/action
+	# block for this pointer ID. Late drags after release therefore stay inert.
+	blocked_drag_ids.erase(pointer_id)
+	recovery_block_until_ms = -1
+
 	# Menus and narrative states are exclusive. A touch used to select/advance
 	# one of these must never later become a recovered movement pointer.
 	if parent.ui_mode == "title":
@@ -226,13 +237,18 @@ func route_pointer_release(_parent, pointer_id: int, source: String) -> void:
 	if pointer_id == breaker_pointer_id:
 		breaker_pointer_id = -1
 		release_breaker()
-	if source == "screen" and active_source == "screen" and pointer_id == active_pointer_id:
+	if source == "screen":
+		# Guard every released screen pointer, not only the movement owner. Browser
+		# event streams can deliver a final drag after an action-finger release.
 		last_released_screen_id = pointer_id
 		last_release_ms = now_ms()
-		clear_movement_authority()
-	elif source == "mouse" and active_source == "mouse" and pointer_id == MOUSE_POINTER_ID:
-		clear_movement_authority()
-	blocked_drag_ids.erase(pointer_id)
+		blocked_drag_ids[pointer_id] = true
+		if active_source == "screen" and pointer_id == active_pointer_id:
+			clear_movement_authority()
+	elif source == "mouse":
+		blocked_drag_ids[pointer_id] = true
+		if active_source == "mouse" and pointer_id == MOUSE_POINTER_ID:
+			clear_movement_authority()
 
 func handle_screen_drag(parent, drag: InputEventScreenDrag) -> void:
 	if not gameplay_accepts_movement(parent):
@@ -242,8 +258,8 @@ func handle_screen_drag(parent, drag: InputEventScreenDrag) -> void:
 		update_movement_vector(drag.position)
 		return
 	if active_source == "none" and drag.position.x < LEFT_ZONE_X and can_recover_drag(drag.index):
-		# Recover a genuinely lost initial press. The release guard and blocked-ID
-		# set prevent late/action drags from becoming ghost movement.
+		# Recover a genuinely lost initial press. State-boundary and released/action
+		# guards prevent late drags from becoming ghost movement.
 		claim_movement_pointer(drag.index, drag.position - drag.relative, "screen")
 		update_movement_vector(drag.position)
 
@@ -507,6 +523,7 @@ func set_paused(parent, value: bool) -> void:
 	parent.paused = value
 	parent.pause_selection = 0
 	clear_movement_authority()
+	recovery_block_until_ms = now_ms() + TRANSIENT_RECOVERY_GUARD_MS
 	if value:
 		cancel_breaker()
 	sync_parent()
@@ -514,8 +531,8 @@ func set_paused(parent, value: bool) -> void:
 func restart_checkpoint(parent) -> void:
 	clear_movement_authority()
 	breaker_pointer_id = -1
-	blocked_drag_ids.clear()
 	cancel_breaker()
+	recovery_block_until_ms = now_ms() + TRANSIENT_RECOVERY_GUARD_MS
 	parent.paused = false
 	parent.pause_selection = 0
 	parent.restart_from_checkpoint()
@@ -524,6 +541,6 @@ func restart_checkpoint(parent) -> void:
 func cancel_transient_input() -> void:
 	clear_movement_authority()
 	breaker_pointer_id = -1
-	blocked_drag_ids.clear()
 	cancel_breaker()
+	recovery_block_until_ms = now_ms() + TRANSIENT_RECOVERY_GUARD_MS
 	sync_parent()
