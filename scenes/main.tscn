@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3]
+[gd_scene load_steps=18 format=3]
 
 [ext_resource path="res://scripts/game.gd" type="Script" id="1_game"]
 [ext_resource path="res://scripts/breaker_controller.gd" type="Script" id="2_breaker"]
@@ -16,6 +16,7 @@
 [ext_resource path="res://scripts/act3_boss_checkpoint.gd" type="Script" id="15_act3_checkpoint"]
 [ext_resource path="res://scripts/act4_boss_checkpoint.gd" type="Script" id="16_act4_checkpoint"]
 [ext_resource path="res://scripts/crown_pacing.gd" type="Script" id="17_crown_pacing"]
+[ext_resource path="res://scripts/act5_boss_checkpoint.gd" type="Script" id="18_act5_checkpoint"]
 
 [node name="DyingSun" type="Node2D"]
 script = ExtResource("1_game")
@@ -34,6 +35,9 @@ script = ExtResource("15_act3_checkpoint")
 
 [node name="Act4BossCheckpoint" type="Node" parent="."]
 script = ExtResource("16_act4_checkpoint")
+
+[node name="Act5BossCheckpoint" type="Node" parent="."]
+script = ExtResource("18_act5_checkpoint")
 
 [node name="SectorDirector" type="Node2D" parent="."]
 script = ExtResource("4_sector")
