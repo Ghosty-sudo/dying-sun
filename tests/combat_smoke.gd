@@ -174,14 +174,18 @@ func _ready() -> void:
 	game.module_choices.clear()
 	game.module_choices.append({"id": "impact_servo", "name": "Impact Servo", "desc": "test"})
 	game.module_choices.append({"id": "phase_coil", "name": "Phase Coil", "desc": "test"})
+	game.dash_time = 0.0
 	game.dash_cooldown = 0.0
 	input_router._input(joy_button(JOY_BUTTON_B))
 	if not GameState.has_module("phase_coil") or game.current_act != 2:
 		fail("controller B did not install the right module option")
 		game.free()
 		return
-	if game.dash_cooldown < 0.11:
-		fail("module choice did not suppress same-event boost bleed")
+	# The old dual-handler architecture needed an artificial cooldown lock to
+	# suppress the same B event from falling through into boost. One router now
+	# consumes the module choice and returns, so no boost should occur at all.
+	if game.dash_time > 0.0 or game.dash_cooldown > 0.0:
+		fail("module choice bled into boost after unified routing")
 		game.free()
 		return
 	print("COMBAT_SMOKE // MODULE CHOICE VERIFIED")
