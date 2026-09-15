@@ -96,8 +96,7 @@ func process_act_one(parent) -> void:
 		"sector_gate_pressure":
 			apply_gate_hazard(parent)
 			if parent.enemies.is_empty():
-				room_id = "custodian_chamber"
-				parent.spawn_boss()
+				enter_custodian_checkpoint(parent)
 
 func process_act_two(parent, delta: float) -> void:
 	if parent.stage == "wave_a":
@@ -166,6 +165,9 @@ func begin_coolant_bridge(parent) -> void:
 	announce(parent, "COOLANT BRIDGE // STAY OFF THE RAILS")
 
 func begin_gate_approach(parent) -> void:
+	if GameState.has_flag("act1_custodian_checkpoint"):
+		restore_custodian_checkpoint(parent)
+		return
 	room_id = "gate_approach"
 	gate_grace = 0.0
 	parent.stage = "sector_gate_approach"
@@ -192,6 +194,27 @@ func begin_gate_pressure(parent) -> void:
 	parent.enemies.append(parent.make_enemy(Vector2(410, 115), 5, "WARDEN"))
 	parent.enemies.append(parent.make_enemy(Vector2(480, 240), 6, "SUN-HUSK"))
 	announce(parent, "CUSTODIAN ANTECHAMBER // GATE CORE CHARGING")
+
+func enter_custodian_checkpoint(parent) -> void:
+	GameState.set_flag("act1_custodian_checkpoint")
+	SaveManager.save_campaign()
+	restore_custodian_checkpoint(parent)
+
+func restore_custodian_checkpoint(parent) -> void:
+	room_id = "custodian_chamber"
+	parent.enemies.clear()
+	parent.projectiles.clear()
+	parent.player_pos = Vector2(102, 182)
+	parent.player_hp = parent.max_hp()
+	parent.player_charge = parent.max_charge()
+	parent.hurt_cooldown = 0.0
+	parent.dash_time = 0.0
+	parent.dash_cooldown = 0.0
+	parent.attack_cooldown = 0.0
+	parent.deflect_time = 0.0
+	parent.deflect_cooldown = 0.0
+	parent.spawn_boss()
+	announce(parent, "CUSTODIAN CHAMBER // FRAME STABILIZED")
 
 func begin_memory_entry(parent) -> void:
 	room_id = "memory_entry"
