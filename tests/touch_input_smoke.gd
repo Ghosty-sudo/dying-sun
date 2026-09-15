@@ -109,8 +109,9 @@ func _ready() -> void:
 		fail("secondary finger changed active movement direction")
 		return
 
-	# Releasing the owning finger must immediately zero the stick. A late drag
-	# for that just-released pointer must not resurrect ghost movement.
+	# Releasing the owning finger must immediately zero the stick. Late drags
+	# from the movement finger, an action finger, or a blocked second finger must
+	# not resurrect movement.
 	send_to_runtime(router, screen_touch(3, Vector2(140, 286), false))
 	if game.touch_move_id != -1 or game.touch_move != Vector2.ZERO:
 		fail("screen touch release left joystick captured")
@@ -119,7 +120,10 @@ func _ready() -> void:
 	if game.touch_move_id != -1 or game.touch_move != Vector2.ZERO:
 		fail("late drag resurrected released joystick")
 		return
-	# The other already-blocked left finger must not take over after owner release.
+	send_to_runtime(router, screen_drag(20, Vector2(160, 240), Vector2(-402, -42)))
+	if game.touch_move_id != -1:
+		fail("late drag from released action finger became movement")
+		return
 	send_to_runtime(router, screen_drag(4, Vector2(70, 210), Vector2(-5, -10)))
 	if game.touch_move_id != -1:
 		fail("blocked secondary finger recovered movement after owner release")
