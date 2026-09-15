@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource path="res://scripts/game.gd" type="Script" id="1_game"]
 [ext_resource path="res://scripts/breaker_controller.gd" type="Script" id="2_breaker"]
@@ -12,6 +12,7 @@
 [ext_resource path="res://scripts/act5_director.gd" type="Script" id="11_act5"]
 [ext_resource path="res://scripts/presentation_polish.gd" type="Script" id="12_presentation"]
 [ext_resource path="res://scripts/act2_boss_checkpoint.gd" type="Script" id="13_act2_checkpoint"]
+[ext_resource path="res://scripts/archivist_pacing.gd" type="Script" id="14_archivist_pacing"]
 
 [node name="DyingSun" type="Node2D"]
 script = ExtResource("1_game")
@@ -39,6 +40,9 @@ script = ExtResource("11_act5")
 
 [node name="CrownBoostCounter" type="Node2D" parent="."]
 script = ExtResource("9_boost_counter")
+
+[node name="ArchivistPacing" type="Node" parent="."]
+script = ExtResource("14_archivist_pacing")
 
 [node name="PlayerPathPolish" type="Node2D" parent="."]
 script = ExtResource("7_polish")
