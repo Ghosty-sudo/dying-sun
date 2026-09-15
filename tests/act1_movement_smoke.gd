@@ -4,6 +4,20 @@ func fail(message: String) -> void:
 	push_error("ACT1_MOVEMENT FAILED: " + message)
 	get_tree().quit(1)
 
+func screen_touch(index: int, position: Vector2, pressed: bool) -> InputEventScreenTouch:
+	var event := InputEventScreenTouch.new()
+	event.index = index
+	event.position = position
+	event.pressed = pressed
+	return event
+
+func screen_drag(index: int, position: Vector2, relative: Vector2) -> InputEventScreenDrag:
+	var event := InputEventScreenDrag.new()
+	event.index = index
+	event.position = position
+	event.relative = relative
+	return event
+
 func _ready() -> void:
 	print("ACT1_MOVEMENT // START")
 	GameState.reset_campaign()
@@ -25,12 +39,22 @@ func _ready() -> void:
 	if game.dialogue_open:
 		fail("Act I opened dialogue before traversal input")
 		return
+	var router = game.get_node_or_null("InputRouter")
+	if router == null:
+		fail("InputRouter missing")
+		return
 	var start_pos: Vector2 = game.player_pos
-	game.touch_move = Vector2.RIGHT
+	router._input(screen_touch(1, Vector2(90, 286), true))
+	router._input(screen_drag(1, Vector2(138, 286), Vector2(48, 0)))
+	router._process(0.0)
 	game.update_player(0.25)
-	game.touch_move = Vector2.ZERO
+	router._input(screen_touch(1, Vector2(138, 286), false))
+	router._process(0.0)
 	if game.player_pos.x <= start_pos.x:
 		fail("player position did not advance during Act I traversal")
+		return
+	if game.touch_move != Vector2.ZERO:
+		fail("movement vector did not clear after release")
 		return
 	game.check_encounter_progression()
 	if str(game.stage) != "sector_intake_walk":
