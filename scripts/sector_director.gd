@@ -22,6 +22,7 @@ var room_title_time := 0.0
 
 var furnace_phase := 0
 var furnace_grace := 0.0
+var gate_grace := 0.0
 
 var memory_suppression := 0.0
 var memory_grace := 0.0
@@ -43,6 +44,7 @@ func _process(delta: float) -> void:
 		return
 	hazard_clock += delta
 	furnace_grace = maxf(0.0, furnace_grace - delta)
+	gate_grace = maxf(0.0, gate_grace - delta)
 	memory_suppression = maxf(0.0, memory_suppression - delta)
 	memory_grace = maxf(0.0, memory_grace - delta)
 	room_title_time = maxf(0.0, room_title_time - delta)
@@ -87,7 +89,8 @@ func process_act_one(parent) -> void:
 				room_id = "sol_link"
 				parent.start_narrative_choice()
 		"sector_gate_approach":
-			apply_gate_hazard(parent)
+			# The first half already teaches mixed combat. Keep this room readable
+			# and introduce the gate-core hazard only in the pressure room.
 			if parent.enemies.is_empty():
 				begin_gate_pressure(parent)
 		"sector_gate_pressure":
@@ -164,24 +167,31 @@ func begin_coolant_bridge(parent) -> void:
 
 func begin_gate_approach(parent) -> void:
 	room_id = "gate_approach"
+	gate_grace = 0.0
 	parent.stage = "sector_gate_approach"
 	parent.enemies.clear()
 	parent.projectiles.clear()
 	parent.player_pos = Vector2(82, 182)
-	parent.enemies.append(parent.make_enemy(Vector2(290, 92), 4, "WARDEN"))
-	parent.enemies.append(parent.make_enemy(Vector2(340, 266), 4, "WARDEN"))
+	# The after-choice save is a real checkpoint. The live first attempt should
+	# receive the same recovery as a death/reload instead of entering at 1 HP.
+	parent.player_hp = parent.max_hp()
+	parent.player_charge = parent.max_charge()
+	parent.hurt_cooldown = 0.0
+	parent.enemies.append(parent.make_enemy(Vector2(300, 100), 4, "WARDEN"))
 	parent.enemies.append(parent.make_enemy(Vector2(455, 112), 4, "HUSK"))
 	parent.enemies.append(parent.make_enemy(Vector2(540, 238), 6, "SUN-HUSK"))
-	announce(parent, "INNER GATE // BREAK THE SCREEN")
+	announce(parent, "INNER GATE // THREE CONTACTS // BREAK THE SCREEN")
 
 func begin_gate_pressure(parent) -> void:
 	room_id = "gate_pressure"
+	gate_grace = 1.15
+	hazard_clock = 0.0
 	parent.stage = "sector_gate_pressure"
 	parent.projectiles.clear()
 	parent.player_pos = Vector2(102, 182)
 	parent.enemies.append(parent.make_enemy(Vector2(410, 115), 5, "WARDEN"))
-	parent.enemies.append(parent.make_enemy(Vector2(480, 240), 7, "SUN-HUSK"))
-	announce(parent, "CUSTODIAN ANTECHAMBER // NO RETURN")
+	parent.enemies.append(parent.make_enemy(Vector2(480, 240), 6, "SUN-HUSK"))
+	announce(parent, "CUSTODIAN ANTECHAMBER // GATE CORE CHARGING")
 
 func begin_memory_entry(parent) -> void:
 	room_id = "memory_entry"
@@ -309,7 +319,7 @@ func furnace_hot() -> bool:
 	return furnace_phase >= 1 and furnace_grace <= 0.0 and fmod(hazard_clock, 2.8) < 0.50
 
 func gate_hot() -> bool:
-	return fmod(hazard_clock + 0.8, 2.0) < 0.58
+	return gate_grace <= 0.0 and fmod(hazard_clock + 0.8, 2.0) < 0.42
 
 func memory_sweep_x() -> float:
 	var phase := fmod(hazard_clock, 4.0) / 4.0
@@ -393,7 +403,11 @@ func draw_act_one(font: Font) -> void:
 			draw_rect(Rect2(24, 286, 592, 50), Color(0.18, 0.65, 0.80, 0.16), true)
 			draw_line(Vector2(24, 78), Vector2(616, 78), Color(0.40, 0.88, 0.96, 0.60), 2.0)
 			draw_line(Vector2(24, 286), Vector2(616, 286), Color(0.40, 0.88, 0.96, 0.60), 2.0)
-		"gate_approach", "gate_pressure", "custodian_chamber":
+		"gate_approach":
+			draw_circle(GATE_CORE, 54.0, Color(1.0, 0.45, 0.12, 0.035), true)
+			draw_arc(GATE_CORE, 58.0, 0.0, TAU, 32, Color(0.95, 0.62, 0.22, 0.38), 2.0)
+			draw_string(font, GATE_CORE + Vector2(-45, -68), "CORE DORMANT", HORIZONTAL_ALIGNMENT_CENTER, 90, 9, Color(0.95, 0.72, 0.38, 0.72))
+		"gate_pressure", "custodian_chamber":
 			draw_circle(GATE_CORE, 54.0, Color(1.0, 0.45, 0.12, 0.17 if gate_hot() else 0.05), true)
 			draw_arc(GATE_CORE, 58.0, 0.0, TAU, 32, Color(0.95, 0.62, 0.22, 0.72), 3.0)
 			draw_line(Vector2(365, 58), Vector2(365, 302), Color(0.95, 0.62, 0.22, 0.25), 2.0)
