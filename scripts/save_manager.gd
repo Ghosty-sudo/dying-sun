@@ -77,8 +77,11 @@ func load_campaign() -> bool:
 		push_warning("Primary Dying Sun save is invalid; trying backup")
 	if _load_from_path(SAVE_BACKUP_PATH):
 		push_warning("Recovered Dying Sun campaign from backup")
-		# Heal the primary path from the recovered in-memory snapshot.
-		save_campaign()
+		# The primary may be corrupt. Remove it before healing so save_campaign()
+		# cannot copy corrupt bytes over the known-good backup we just loaded.
+		_remove_if_present(SAVE_PATH)
+		if not save_campaign():
+			push_warning("Recovered campaign in memory but could not heal primary save")
 		return true
 
 	if has_save() or FileAccess.file_exists(SAVE_BACKUP_PATH):
