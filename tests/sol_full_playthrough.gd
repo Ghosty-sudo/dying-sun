@@ -52,10 +52,12 @@ var act_time: Dictionary = {}
 var route_choices: Array[String] = []
 var module_choices: Array[String] = []
 var death_recoveries := 0
-var last_progress_signature := ""
-var progress_stalled_since := 0.0
+var failed := false
 
 func fail(message: String) -> void:
+	if failed:
+		return
+	failed = true
 	flush_current_timing()
 	print_report("FAILED // " + message)
 	push_error("SOL_PLAYTHROUGH FAILED: " + message)
@@ -109,11 +111,15 @@ func full_breaker() -> void:
 		return
 	send_touch(BREAKER_TOUCH, BREAKER_POS, true)
 	simulate_seconds(0.84)
+	if failed:
+		return
 	send_touch(BREAKER_TOUCH, BREAKER_POS, false)
 	breakers += 1
 	simulate_seconds(0.04)
 
 func simulate_frame() -> void:
+	if failed:
+		return
 	# Manual deterministic ordering mirrors the live process priorities closely
 	# enough for authored progression while avoiding real-time waits in CI.
 	router._process(DT)
@@ -132,9 +138,11 @@ func simulate_frame() -> void:
 func simulate_seconds(seconds: float) -> void:
 	var frames := maxi(1, int(ceil(seconds / DT)))
 	for _i in range(frames):
+		if failed:
+			return
 		simulate_frame()
 
-func move_toward(target: Vector2, seconds: float = 0.09, allow_boost: bool = true) -> void:
+func drive_toward(target: Vector2, seconds: float = 0.09, allow_boost: bool = true) -> void:
 	var delta: Vector2 = target - Vector2(game.player_pos)
 	if delta.length() <= 3.0:
 		simulate_seconds(seconds)
@@ -147,6 +155,8 @@ func move_toward(target: Vector2, seconds: float = 0.09, allow_boost: bool = tru
 	send_drag(MOVE_TOUCH, target_stick, target_stick - JOYSTICK_START)
 	movement_bursts += 1
 	simulate_seconds(seconds)
+	if failed:
+		return
 	send_touch(MOVE_TOUCH, JOYSTICK_START, false)
 
 func nearest_enemy_index() -> int:
@@ -193,16 +203,18 @@ func combat_step() -> void:
 		var away := (Vector2(game.player_pos) - target).normalized()
 		if away.length_squared() <= 0.001:
 			away = Vector2.LEFT
-		move_toward(Vector2(game.player_pos) + away * 110.0, 0.12, false)
+		drive_toward(Vector2(game.player_pos) + away * 110.0, 0.12, false)
 		return
 
 	if distance > 47.0:
-		move_toward(target, 0.08)
+		drive_toward(target, 0.08)
 		return
 
 	# Tiny facing correction is still real movement input; it keeps melee tests
 	# honest instead of directly writing last_move.
-	move_toward(target, 0.018, false)
+	drive_toward(target, 0.018, false)
+	if failed:
+		return
 	if game.attack_cooldown <= 0.0:
 		tap_attack()
 		simulate_seconds(0.12)
@@ -212,14 +224,16 @@ func combat_step() -> void:
 func objective_hold_step(target: Vector2, radius: float = 30.0) -> void:
 	var distance := Vector2(game.player_pos).distance_to(target)
 	if distance > radius:
-		move_toward(target, 0.08)
+		drive_toward(target, 0.08)
 		return
 	defensive_action()
 	var index := nearest_enemy_index()
 	if index >= 0:
 		var enemy_pos := Vector2(game.enemies[index]["pos"])
 		if enemy_pos.distance_to(game.player_pos) <= 54.0 and game.attack_cooldown <= 0.0:
-			move_toward(enemy_pos, 0.012, false)
+			drive_toward(enemy_pos, 0.012, false)
+			if failed:
+				return
 			tap_attack()
 			simulate_seconds(0.08)
 			return
@@ -227,14 +241,16 @@ func objective_hold_step(target: Vector2, radius: float = 30.0) -> void:
 
 func follow_objective_step(target: Vector2, radius: float = 44.0) -> void:
 	if Vector2(game.player_pos).distance_to(target) > radius:
-		move_toward(target, 0.08)
+		drive_toward(target, 0.08)
 		return
 	defensive_action()
 	var index := nearest_enemy_index()
 	if index >= 0:
 		var enemy_pos := Vector2(game.enemies[index]["pos"])
 		if enemy_pos.distance_to(game.player_pos) <= 56.0 and game.attack_cooldown <= 0.0:
-			move_toward(enemy_pos, 0.012, false)
+			drive_toward(enemy_pos, 0.012, false)
+			if failed:
+				return
 			tap_attack()
 			simulate_seconds(0.08)
 			return
@@ -244,10 +260,12 @@ func handle_memory_seal() -> void:
 	var seal_pos := Vector2(390.0, 180.0)
 	var firing_pos := seal_pos - Vector2(58.0, 0.0)
 	if Vector2(game.player_pos).distance_to(firing_pos) > 18.0:
-		move_toward(firing_pos, 0.08)
+		drive_toward(firing_pos, 0.08)
 		return
 	# Face the seal using real movement, then charge and release the required tool.
-	move_toward(seal_pos, 0.02, false)
+	drive_toward(seal_pos, 0.02, false)
+	if failed:
+		return
 	full_breaker()
 
 func handle_dialogue() -> void:
@@ -303,19 +321,19 @@ func authored_stage_step() -> void:
 		"wave_a", "wave_b":
 			simulate_seconds(0.05)
 		"sector_intake_walk":
-			move_toward(Vector2(455.0, 182.0), 0.10)
+			drive_toward(Vector2(455.0, 182.0), 0.10)
 		"sector_furnace", "sector_coolant", "sector_gate_approach", "sector_gate_pressure", "sector_memory_gallery", "boss":
 			combat_step()
 		"sector_memory_entry":
-			move_toward(Vector2(285.0, 180.0), 0.10)
+			drive_toward(Vector2(285.0, 180.0), 0.10)
 		"sector_memory_seal":
 			handle_memory_seal()
 		"sector_archive_hold":
 			objective_hold_step(Vector2(350.0, 180.0), 28.0)
 		"sector_purge_run":
-			move_toward(Vector2(570.0, 180.0), 0.10)
+			drive_toward(Vector2(570.0, 180.0), 0.10)
 		"sector_relay_entry":
-			move_toward(Vector2(205.0, 180.0), 0.08)
+			drive_toward(Vector2(205.0, 180.0), 0.08)
 		"sector_relay_sync":
 			if int(act3.relay_index) < act3.RELAY_NODES.size():
 				objective_hold_step(Vector2(act3.RELAY_NODES[int(act3.relay_index)]), 27.0)
@@ -324,9 +342,9 @@ func authored_stage_step() -> void:
 		"sector_civilian_feed":
 			follow_objective_step(Vector2(act3.escort_pos), 48.0)
 		"sector_defense_push":
-			move_toward(Vector2(570.0, 180.0), 0.10)
+			drive_toward(Vector2(570.0, 180.0), 0.10)
 		"sector_crown_entry":
-			move_toward(Vector2(205.0, 180.0), 0.08)
+			drive_toward(Vector2(205.0, 180.0), 0.08)
 		"sector_crown_audit":
 			if int(act4.truth_index) < act4.TRUTH_NODES.size():
 				objective_hold_step(Vector2(act4.TRUTH_NODES[int(act4.truth_index)]), 26.0)
@@ -338,9 +356,9 @@ func authored_stage_step() -> void:
 			else:
 				simulate_seconds(0.05)
 		"sector_crown_overdrive":
-			move_toward(Vector2(570.0, 180.0), 0.10)
+			drive_toward(Vector2(570.0, 180.0), 0.10)
 		"sector_last_light_entry":
-			move_toward(Vector2(205.0, 180.0), 0.08)
+			drive_toward(Vector2(205.0, 180.0), 0.08)
 		"sector_echo_convergence":
 			if int(act5.echo_index) < act5.ECHO_NODES.size():
 				objective_hold_step(Vector2(act5.ECHO_NODES[int(act5.echo_index)]), 27.0)
@@ -352,10 +370,11 @@ func authored_stage_step() -> void:
 			if int(act5.sever_index) < act5.SEVER_NODES.size():
 				var lock_pos := Vector2(act5.SEVER_NODES[int(act5.sever_index)])
 				if Vector2(game.player_pos).distance_to(lock_pos) > 55.0:
-					move_toward(lock_pos, 0.08)
+					drive_toward(lock_pos, 0.08)
 				else:
-					move_toward(lock_pos, 0.02, false)
-					full_breaker()
+					drive_toward(lock_pos, 0.02, false)
+					if not failed:
+						full_breaker()
 			else:
 				simulate_seconds(0.05)
 		"act_complete":
@@ -391,6 +410,8 @@ func transition_key(act_number: int, stage_name: String) -> String:
 	return "A%d/%s" % [act_number, stage_name]
 
 func observe_transition() -> void:
+	if failed:
+		return
 	var act_number := int(game.current_act)
 	var stage_name := str(game.stage)
 	if last_act == 0:
@@ -420,7 +441,6 @@ func observe_transition() -> void:
 		var new_key := transition_key(act_number, stage_name)
 		stage_visits[new_key] = int(stage_visits.get(new_key, 0)) + 1
 		print("SOL_PLAYTHROUGH // ACT %d // %s // armor %d/%d // t=%.1f" % [act_number, stage_name, game.player_hp, game.max_hp(), sim_time])
-		progress_stalled_since = sim_time
 
 	last_enemy_count = game.enemies.size()
 	if sim_time - stage_started > MAX_STAGE_SECONDS:
@@ -497,12 +517,14 @@ func _ready() -> void:
 	send_touch(2, Vector2(320.0, 192.0), true)
 	send_touch(2, Vector2(320.0, 192.0), false)
 	simulate_seconds(0.05)
+	if failed:
+		return
 	if game.ui_mode != "play" or int(game.current_act) != 1:
 		fail("fresh title input did not start a new campaign")
 		return
 
 	observe_transition()
-	while game.ui_mode != "ending" and sim_time < MAX_SIM_SECONDS:
+	while not failed and game.ui_mode != "ending" and sim_time < MAX_SIM_SECONDS:
 		if game.dead:
 			recover_from_death()
 			continue
@@ -514,6 +536,8 @@ func _ready() -> void:
 			continue
 		authored_stage_step()
 
+	if failed:
+		return
 	if game.ui_mode != "ending":
 		fail("campaign did not reach an ending within %.0f simulated seconds" % MAX_SIM_SECONDS)
 		return
