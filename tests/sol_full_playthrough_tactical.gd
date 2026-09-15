@@ -28,6 +28,33 @@ func simulate_frame() -> void:
 	observe_metrics()
 	observe_transition()
 
+func handle_module() -> void:
+	# Make actual build decisions instead of preserving the original arbitrary
+	# smoke-test picks. Early Dying Sun is projectile-heavy, so cheaper Boost is
+	# the strongest survival tool for this route; later picks keep the build
+	# defensive until Crown Spike turns the finale into an earned damage check.
+	var key := KEY_1
+	var label := ""
+	match int(game.current_act):
+		1:
+			key = KEY_1
+			label = "PHASE COIL"
+		2:
+			key = KEY_1
+			label = "MIRROR LATTICE"
+		3:
+			key = KEY_2
+			label = "GHOST CHASSIS"
+		4:
+			key = KEY_1
+			label = "CROWN SPIKE"
+		_:
+			key = KEY_1
+			label = "DEFAULT"
+	module_choices.append("ACT %d // %s" % [game.current_act, label])
+	send_key(key)
+	simulate_seconds(0.05)
+
 func observe_metrics() -> void:
 	if last_hp > 0 and game.player_hp < last_hp:
 		var lost := last_hp - int(game.player_hp)
@@ -51,6 +78,13 @@ func projectile_threat(horizon: float = 0.24) -> Dictionary:
 			best_t = t
 			best = {"time": t, "velocity": velocity, "pos": Vector2(projectile["pos"])}
 	return best
+
+func nearby_projectile_count(radius: float = 92.0) -> int:
+	var count := 0
+	for projectile in game.projectiles:
+		if Vector2(projectile["pos"]).distance_to(game.player_pos) <= radius:
+			count += 1
+	return count
 
 func enemy_threat() -> Dictionary:
 	var best: Dictionary = {}
@@ -82,6 +116,14 @@ func evade_vector_from(origin: Vector2) -> Vector2:
 func global_defense() -> bool:
 	var projectile := projectile_threat()
 	if not projectile.is_empty() and float(projectile["time"]) <= 0.17:
+		# A ring/fan is not one parry. When several projectiles converge, spend a
+		# Boost to leave the lane instead of deflecting one bolt and eating the next.
+		if nearby_projectile_count() >= 3 and game.dash_cooldown <= 0.0 and game.player_charge >= game.boost_cost():
+			tap_boost()
+			var cluster_velocity := Vector2(projectile["velocity"]).normalized()
+			var cluster_tangent := Vector2(-cluster_velocity.y, cluster_velocity.x)
+			drive_toward(Vector2(game.player_pos) + cluster_tangent * 125.0, 0.15, false)
+			return true
 		if game.deflect_cooldown <= 0.0:
 			tap_deflect()
 			simulate_seconds(game.deflect_window_length() + 0.025)
@@ -154,6 +196,12 @@ func boss_tactic(enemy: Dictionary) -> void:
 
 	var projectile := projectile_threat()
 	if not projectile.is_empty() and float(projectile["time"]) <= 0.17:
+		if nearby_projectile_count() >= 3 and game.dash_cooldown <= 0.0 and game.player_charge >= game.boost_cost():
+			tap_boost()
+			var cluster_velocity := Vector2(projectile["velocity"]).normalized()
+			var cluster_tangent := Vector2(-cluster_velocity.y, cluster_velocity.x)
+			drive_toward(Vector2(game.player_pos) + cluster_tangent * 125.0, 0.15, false)
+			return
 		if game.deflect_cooldown <= 0.0:
 			tap_deflect()
 			simulate_seconds(window + 0.025)
@@ -166,14 +214,31 @@ func boss_tactic(enemy: Dictionary) -> void:
 			return
 
 	if state == "telegraph":
-		# The Gate Custodian visibly alternates lunge / fan. Deflect the lunge;
-		# sidestep the fan at release so Frame Charge is spent intentionally.
+		# Gate Custodian alternates a lunge and fan. Deflect the lunge; sidestep
+		# the fan at release so Frame Charge is spent intentionally.
 		if kind == "GATE-CUSTODIAN" and pattern % 2 == 1 and remaining <= 0.075:
 			if game.dash_cooldown <= 0.0 and game.player_charge >= game.boost_cost():
 				tap_boost()
-				var tangent := evade_vector_from(target)
-				drive_toward(Vector2(game.player_pos) + tangent * 120.0, 0.15, false)
+				var gate_tangent := evade_vector_from(target)
+				drive_toward(Vector2(game.player_pos) + gate_tangent * 120.0, 0.15, false)
 				return
+
+		# The Archivist is a ranged read, not a melee-parry read. Its ring, fan,
+		# and teleport burst should be dodged at release; parrying during the
+		# telegraph wastes the deflect before the projectile arrives.
+		if kind == "THE-ARCHIVIST":
+			if remaining <= 0.09:
+				var archivist_tangent := evade_vector_from(target)
+				if game.dash_cooldown <= 0.0 and game.player_charge >= game.boost_cost():
+					tap_boost()
+					drive_toward(Vector2(game.player_pos) + archivist_tangent * 130.0, 0.15, false)
+				else:
+					drive_toward(Vector2(game.player_pos) + archivist_tangent * 90.0, 0.12, false)
+				return
+			var archive_circle := evade_vector_from(target)
+			drive_toward(Vector2(game.player_pos) + archive_circle * 34.0, 0.045, false)
+			return
+
 		if remaining <= window + 0.035:
 			if game.deflect_cooldown <= 0.0:
 				tap_deflect()
@@ -194,6 +259,20 @@ func boss_tactic(enemy: Dictionary) -> void:
 		else:
 			drive_toward(target, 0.012, false)
 			if not failed:
+				tap_attack()
+				simulate_seconds(0.10)
+		return
+
+	# The Archivist deliberately tries to hold ~90 px. Chase during its cooldown
+	# instead of letting a ranged boss dictate spacing forever.
+	if kind == "THE-ARCHIVIST" and float(enemy.get("attack_cd", 0.0)) > 0.12:
+		if distance > 50.0:
+			if distance > 95.0 and game.dash_cooldown <= 0.0 and game.player_charge >= game.boost_cost() + 8.0:
+				tap_boost()
+			drive_toward(target, 0.075, false)
+		else:
+			drive_toward(target, 0.012, false)
+			if not failed and game.attack_cooldown <= 0.0:
 				tap_attack()
 				simulate_seconds(0.10)
 		return
@@ -219,7 +298,10 @@ func boss_tactic(enemy: Dictionary) -> void:
 func combat_step() -> void:
 	tactical_calls += 1
 	if tactical_calls % 300 == 0:
-		print("SOL_PLAYTHROUGH // TACTICAL HEARTBEAT // calls=%d sim=%.1f stage=%s armor=%d enemies=%d projectiles=%d" % [tactical_calls, sim_time, str(game.stage), game.player_hp, game.enemies.size(), game.projectiles.size()])
+		var boss_hp := -1
+		if game.enemies.size() == 1 and game.is_boss_kind(str(game.enemies[0].get("kind", ""))):
+			boss_hp = int(game.enemies[0].get("hp", -1))
+		print("SOL_PLAYTHROUGH // TACTICAL HEARTBEAT // calls=%d sim=%.1f stage=%s armor=%d enemies=%d projectiles=%d boss_hp=%d" % [tactical_calls, sim_time, str(game.stage), game.player_hp, game.enemies.size(), game.projectiles.size(), boss_hp])
 	if tactical_calls > 6000:
 		fail("tactical decision loop exceeded 6000 combat calls")
 		return
