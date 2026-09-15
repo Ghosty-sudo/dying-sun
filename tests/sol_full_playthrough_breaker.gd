@@ -17,6 +17,10 @@ func simulate_frame() -> void:
 	if act3_checkpoint != null:
 		act3_checkpoint._process(DT)
 
+	var act4_checkpoint = game.get_node_or_null("Act4BossCheckpoint")
+	if act4_checkpoint != null:
+		act4_checkpoint._process(DT)
+
 	var act2_checkpoint = game.get_node_or_null("Act2BossCheckpoint")
 	if act2_checkpoint != null:
 		act2_checkpoint._process(DT)
@@ -70,37 +74,19 @@ func relay_saint_tactic(enemy: Dictionary) -> bool:
 	var recovery := float(enemy.get("attack_cd", 0.0))
 
 	# Relay Saint alternates a cross+fan projectile burst and an instantaneous
-	# two-damage lunge. The generic policy used to parry early in the telegraph,
-	# so the deflect window expired before either attack actually released.
+	# two-damage lunge. Defending at release is the intended read. Use mobility
+	# for both patterns here; Mirror Lattice reflection can legitimately kill a
+	# boss inside its own update callback, a runtime edge case tracked separately.
 	if state == "telegraph":
-		if pattern % 2 == 0:
-			# The cross and aimed fan overlap. Leave the firing lane at release;
-			# trying to parry one shard is the wrong read for a multi-shot burst.
-			if remaining <= 0.075:
-				var tangent := evade_vector_from(target)
-				if game.dash_cooldown <= 0.0 and game.player_charge >= game.boost_cost():
-					tap_boost()
-					drive_toward(Vector2(game.player_pos) + tangent * 135.0, 0.16, false)
-				return true
-			var circle := evade_vector_from(target)
-			drive_toward(Vector2(game.player_pos) + circle * 34.0, 0.04, false)
+		if remaining <= 0.075:
+			var tangent := evade_vector_from(target)
+			if game.dash_cooldown <= 0.0 and game.player_charge >= game.boost_cost():
+				tap_boost()
+				drive_toward(Vector2(game.player_pos) + tangent * (140.0 if pattern % 2 == 0 else 120.0), 0.16, false)
 			return true
-		else:
-			# The lunge resolves the instant the telegraph ends. Parry late enough
-			# that the live deflect window actually covers impact.
-			if remaining <= 0.060:
-				if game.deflect_cooldown <= 0.0:
-					tap_deflect()
-					simulate_seconds(0.10)
-					return true
-				if game.dash_cooldown <= 0.0 and game.player_charge >= game.boost_cost():
-					tap_boost()
-					var tangent := evade_vector_from(target)
-					drive_toward(Vector2(game.player_pos) + tangent * 120.0, 0.13, false)
-					return true
-			var circle := evade_vector_from(target)
-			drive_toward(Vector2(game.player_pos) + circle * 28.0, 0.035, false)
-			return true
+		var circle := evade_vector_from(target)
+		drive_toward(Vector2(game.player_pos) + circle * 34.0, 0.04, false)
+		return true
 
 	# Spend the early recovery window attacking, then disengage before the next
 	# tell so the player is not standing inside the cross/fan origin at release.
@@ -123,6 +109,66 @@ func relay_saint_tactic(enemy: Dictionary) -> bool:
 	simulate_seconds(0.035)
 	return true
 
+func crown_custodian_tactic(enemy: Dictionary) -> bool:
+	var state := str(enemy.get("state", ""))
+	var target := Vector2(enemy["pos"])
+	var distance := target.distance_to(game.player_pos)
+	var remaining := float(enemy.get("telegraph", 9.0))
+	var pattern := int(enemy.get("pattern", 0))
+	var recovery := float(enemy.get("attack_cd", 0.0))
+	var director = game.get_node_or_null("Act4Director")
+	var profile := str(director.counter_profile) if director != null else "balanced"
+
+	# A boost-counter profile projects a cross-shaped mobility grid through the
+	# arena. Keep off the two center axes between attack reads; the counter is
+	# announced and drawn, so this is information available to a human player.
+	if profile == "boost" and game.dash_time <= 0.0:
+		var center := Vector2(365.0, 180.0)
+		if absf(game.player_pos.y - center.y) < 28.0:
+			var safe_y := 132.0 if game.player_pos.y <= center.y else 228.0
+			drive_toward(Vector2(game.player_pos.x, safe_y), 0.06, false)
+			return true
+		if absf(game.player_pos.x - center.x) < 28.0:
+			var safe_x := 320.0 if game.player_pos.x <= center.x else 410.0
+			drive_toward(Vector2(safe_x, game.player_pos.y), 0.05, false)
+			return true
+
+	# Crown Custodian cycles ring, lunge, wide fan. All three are safest when
+	# read at release: ring/fan get a lateral Boost, lunge gets the same late
+	# displacement rather than an early parry whose window can expire.
+	if state == "telegraph":
+		if remaining <= 0.075:
+			var tangent := evade_vector_from(target)
+			if game.dash_cooldown <= 0.0 and game.player_charge >= game.boost_cost():
+				tap_boost()
+			var travel := 145.0 if pattern % 3 != 1 else 120.0
+			drive_toward(Vector2(game.player_pos) + tangent * travel, 0.16, false)
+			return true
+		var circle := evade_vector_from(target)
+		drive_toward(Vector2(game.player_pos) + circle * 34.0, 0.04, false)
+		return true
+
+	# Proof extraction starts the boss close to a stagger break. Commit during
+	# the first half of recovery, then get back out before the next read.
+	if recovery > 0.32:
+		if distance > 52.0:
+			drive_toward(target, 0.055, false)
+		else:
+			drive_toward(target, 0.012, false)
+			if not failed and game.attack_cooldown <= 0.0:
+				tap_attack()
+				simulate_seconds(0.095)
+		return true
+
+	if distance < 105.0:
+		var away := (Vector2(game.player_pos) - target).normalized()
+		if away.length_squared() <= 0.001:
+			away = Vector2.LEFT
+		drive_toward(Vector2(game.player_pos) + away * 90.0, 0.06, false)
+		return true
+	simulate_seconds(0.035)
+	return true
+
 func boss_tactic(enemy: Dictionary) -> void:
 	var kind := str(enemy.get("kind", ""))
 	var state := str(enemy.get("state", ""))
@@ -132,6 +178,8 @@ func boss_tactic(enemy: Dictionary) -> void:
 	var stunned := float(enemy.get("stunned", 0.0))
 
 	if kind == "RELAY-SAINT" and relay_saint_tactic(enemy):
+		return
+	if kind == "CROWN-CUSTODIAN" and crown_custodian_tactic(enemy):
 		return
 
 	# From Act II onward the Breaker is part of the intended kit. Use it only
