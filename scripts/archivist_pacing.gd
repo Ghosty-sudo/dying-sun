@@ -6,8 +6,8 @@ extends Node
 # a boss-specific recovery beat so Act II tests reading + commitment rather than
 # nonstop evasion.
 
-const NORMAL_RECOVERY := 1.05
-const ENRAGED_RECOVERY := 0.76
+const NORMAL_RECOVERY := 1.18
+const ENRAGED_RECOVERY := 0.90
 
 var last_pattern := -1
 
