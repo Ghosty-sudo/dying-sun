@@ -62,13 +62,23 @@ func _ready() -> void:
 		fail("coolant bridge did not advance into the Sol decision")
 		return
 
+	# Carry damage into the choice to prove the live first after-choice attempt is
+	# stabilized exactly like a checkpoint reload.
+	game.player_hp = 1
+	game.player_charge = 3.0
 	game.choice_pending = true
 	game.choose_path(1)
 	game.dialogue_index = game.dialogue_lines.size() - 1
 	game.try_interact()
 	await get_tree().process_frame
-	if str(game.stage) != "sector_gate_approach" or game.enemies.size() != 4:
-		fail("post-choice progression did not enter the four-enemy gate approach")
+	if str(game.stage) != "sector_gate_approach" or game.enemies.size() != 3:
+		fail("post-choice progression did not enter the tuned three-contact gate approach")
+		return
+	if game.player_hp != game.max_hp() or game.player_charge < game.max_charge() - 0.01:
+		fail("after-choice checkpoint did not stabilize armor and charge on the first attempt")
+		return
+	if director.gate_hot():
+		fail("gate core hazard should remain dormant during the approach lesson")
 		return
 
 	game.enemies.clear()
@@ -76,11 +86,36 @@ func _ready() -> void:
 	if str(game.stage) != "sector_gate_pressure" or game.enemies.size() != 2:
 		fail("gate approach did not advance to the custodian antechamber")
 		return
+	if float(director.gate_grace) <= 0.0 or director.gate_hot():
+		fail("custodian antechamber did not preserve the gate-core arming grace period")
+		return
 
+	game.player_hp = 1
+	game.player_charge = 4.0
 	game.enemies.clear()
 	await get_tree().process_frame
 	if str(game.stage) != "boss" or str(game.boss_name) != "GATE CUSTODIAN" or game.enemies.size() != 1:
 		fail("antechamber did not advance to the Act I boss")
+		return
+	if not GameState.has_flag("act1_custodian_checkpoint"):
+		fail("Gate Custodian entry did not persist its retry checkpoint")
+		return
+	if game.player_hp != game.max_hp() or game.player_charge < game.max_charge() - 0.01:
+		fail("Gate Custodian checkpoint did not stabilize the first boss attempt")
+		return
+
+	# A boss death must return to the boss, not replay Gate Approach + Pressure.
+	game.hurt_player(99)
+	if not game.dead:
+		fail("boss retry test could not kill the player")
+		return
+	game.restart_from_checkpoint()
+	await get_tree().process_frame
+	if str(game.stage) != "boss" or str(game.boss_name) != "GATE CUSTODIAN":
+		fail("Act I boss retry replayed the gate gauntlet instead of restoring the boss checkpoint")
+		return
+	if game.player_hp != game.max_hp() or game.player_charge < game.max_charge() - 0.01:
+		fail("Act I boss retry did not restore full combat resources")
 		return
 
 	game.queue_free()
