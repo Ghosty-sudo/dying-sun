@@ -5,6 +5,8 @@ extends "res://tests/sol_full_playthrough.gd"
 # button-spammy: respect telegraphs, preserve Frame Charge, use defensive timing,
 # and reposition around authored hazards rather than face-tanking them.
 
+var tactical_calls := 0
+
 func imminent_projectile() -> bool:
 	for projectile in game.projectiles:
 		if Vector2(projectile["pos"]).distance_to(game.player_pos) <= 38.0:
@@ -37,19 +39,19 @@ func timed_defense(enemy: Dictionary) -> bool:
 	if state == "charge_telegraph" and remaining <= window + 0.035:
 		if game.deflect_cooldown <= 0.0:
 			tap_deflect()
-			simulate_seconds(window + 0.04)
+		simulate_seconds(window + 0.04)
 		return true
 
 	if state == "charge" and distance < 82.0:
 		if game.deflect_cooldown <= 0.0:
 			tap_deflect()
-			simulate_seconds(window + 0.04)
+		simulate_seconds(window + 0.04)
 		return true
 
 	if state == "telegraph" and remaining <= window + 0.025 and distance <= 115.0:
 		if game.deflect_cooldown <= 0.0:
 			tap_deflect()
-			simulate_seconds(window + 0.04)
+		simulate_seconds(window + 0.04)
 		return true
 	return false
 
@@ -68,8 +70,6 @@ func boss_tactic(enemy: Dictionary) -> void:
 		return
 
 	if state == "telegraph":
-		# Gate Custodian alternates a lunge and a projectile fan. Read that cadence
-		# instead of treating two visibly different attacks as the same problem.
 		if kind == "GATE-CUSTODIAN" and pattern % 2 == 1:
 			if remaining <= 0.07 and game.dash_cooldown <= 0.0 and game.player_charge >= game.boost_cost():
 				tap_boost()
@@ -84,8 +84,6 @@ func boss_tactic(enemy: Dictionary) -> void:
 			simulate_seconds(window + 0.04)
 			return
 
-		# While a telegraph is still winding up, circle instead of greedily
-		# attacking through it. This also makes later projectile spreads less dense.
 		var radial := (Vector2(game.player_pos) - target).normalized()
 		if radial.length_squared() <= 0.001:
 			radial = Vector2.RIGHT
@@ -103,8 +101,6 @@ func boss_tactic(enemy: Dictionary) -> void:
 				simulate_seconds(0.10)
 		return
 
-	# Attack during recovery/cooldown, then create just enough space to see the
-	# next tell. No low-armor panic boosting: charge is a tactical resource.
 	if float(enemy.get("attack_cd", 0.0)) > 0.16:
 		if distance > 47.0:
 			drive_toward(target, 0.055, false)
@@ -124,6 +120,12 @@ func boss_tactic(enemy: Dictionary) -> void:
 		simulate_seconds(0.035)
 
 func combat_step() -> void:
+	tactical_calls += 1
+	if tactical_calls % 250 == 0:
+		print("SOL_PLAYTHROUGH // TACTICAL HEARTBEAT // calls=%d sim=%.1f stage=%s armor=%d enemies=%d projectiles=%d" % [tactical_calls, sim_time, str(game.stage), game.player_hp, game.enemies.size(), game.projectiles.size()])
+	if tactical_calls > 5000:
+		fail("tactical decision loop exceeded 5000 combat calls")
+		return
 	if game.enemies.is_empty():
 		simulate_seconds(0.05)
 		return
