@@ -27,7 +27,17 @@ func _draw() -> void:
 		draw_string(font, Vector2(126, 345), "INPUT AUTO-DETECT // keyboard + mouse // controller // touch", HORIZONTAL_ALIGNMENT_CENTER, 388, 9, Color(0.64, 0.71, 0.80, 0.90))
 		return
 
-	if parent.ui_mode != "play" or mode == "touch":
+	if parent.ui_mode != "play":
+		return
+
+	# The first real desktop report read the coolant rails as arena-boundary
+	# damage. Keep the mechanic, but label it continuously while the room is live
+	# so damage has a visible cause instead of feeling like an invisible wall.
+	if str(parent.stage) == "sector_coolant":
+		draw_rect(Rect2(34, 72, 244, 23), Color(0.02, 0.05, 0.07, 0.88), true)
+		draw_string(font, Vector2(42, 87), "CYAN TOP / BOTTOM RAILS = DAMAGE", HORIZONTAL_ALIGNMENT_CENTER, 228, 9, Color(0.48, 0.90, 0.98, 0.96))
+
+	if mode == "touch":
 		return
 
 	# Cover the legacy one-line hint with a clearer two-line legend without
