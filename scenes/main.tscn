@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3]
+[gd_scene load_steps=19 format=3]
 
 [ext_resource path="res://scripts/game.gd" type="Script" id="1_game"]
 [ext_resource path="res://scripts/breaker_controller.gd" type="Script" id="2_breaker"]
@@ -17,6 +17,7 @@
 [ext_resource path="res://scripts/act4_boss_checkpoint.gd" type="Script" id="16_act4_checkpoint"]
 [ext_resource path="res://scripts/crown_pacing.gd" type="Script" id="17_crown_pacing"]
 [ext_resource path="res://scripts/act5_boss_checkpoint.gd" type="Script" id="18_act5_checkpoint"]
+[ext_resource path="res://scripts/adaptive_controls_overlay.gd" type="Script" id="19_controls_overlay"]
 
 [node name="DyingSun" type="Node2D"]
 script = ExtResource("1_game")
@@ -65,6 +66,9 @@ script = ExtResource("7_polish")
 
 [node name="PresentationPolish" type="Node2D" parent="."]
 script = ExtResource("12_presentation")
+
+[node name="AdaptiveControlsOverlay" type="Node2D" parent="."]
+script = ExtResource("19_controls_overlay")
 
 [node name="MeleeContactGuard" type="Node" parent="."]
 script = ExtResource("10_melee_guard")
