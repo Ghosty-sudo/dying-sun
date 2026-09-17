@@ -36,6 +36,18 @@ func mouse_motion(position: Vector2, relative: Vector2) -> InputEventMouseMotion
 	event.button_mask = 0
 	return event
 
+func key_event(keycode: Key) -> InputEventKey:
+	var event := InputEventKey.new()
+	event.keycode = keycode
+	event.pressed = true
+	return event
+
+func joy_motion(axis: JoyAxis, value: float) -> InputEventJoypadMotion:
+	var event := InputEventJoypadMotion.new()
+	event.axis = axis
+	event.axis_value = value
+	return event
+
 func _ready() -> void:
 	await get_tree().process_frame
 	SaveManager.clear_campaign()
@@ -61,9 +73,21 @@ func _ready() -> void:
 		fail("Act I did not reach traversal before input test")
 		return
 
-	# Normal real-screen movement still works through the one live input owner.
+	# Desktop/headless starts with keyboard presentation even if a browser reports
+	# touchscreen capability. The HUD should only enter touch mode after real touch.
+	if not OS.has_feature("mobile"):
+		router._process(0.0)
+		if str(router.presentation_mode) != "keyboard" or game.touch_mode:
+			fail("desktop default exposed touch presentation before real touch input")
+			return
+
+	# Normal real-screen movement still works through the one live input owner and
+	# switches the presentation to touch.
 	var start_pos: Vector2 = game.player_pos
 	send_to_runtime(router, screen_touch(3, Vector2(88, 286), true))
+	if str(router.presentation_mode) != "touch" or not game.touch_mode:
+		fail("real screen input did not enable touch presentation")
+		return
 	send_to_runtime(router, screen_drag(3, Vector2(140, 286), Vector2(52, 0)))
 	game.update_player(0.25)
 	if game.player_pos.x <= start_pos.x:
@@ -96,6 +120,9 @@ func _ready() -> void:
 		return
 	if game.touch_move.distance_to(before_mouse_copy) > 0.01:
 		fail("touch-derived mouse motion changed real screen movement")
+		return
+	if str(router.presentation_mode) != "touch":
+		fail("synthetic mouse copy incorrectly changed touch presentation")
 		return
 
 	# A second finger in the left half must not hijack the active stick, and it
@@ -141,6 +168,23 @@ func _ready() -> void:
 		return
 	send_to_runtime(router, screen_touch(9, Vector2(150, 286), false))
 
+	# Keyboard and controller input immediately replace touch presentation. This
+	# is what keeps mobile buttons off desktop/controller play while allowing a
+	# player to swap devices without a settings toggle.
+	send_to_runtime(router, key_event(KEY_W))
+	if str(router.presentation_mode) != "keyboard" or game.touch_mode:
+		fail("keyboard input did not hide touch presentation")
+		return
+	send_to_runtime(router, joy_motion(JOY_AXIS_LEFT_X, 0.5))
+	if str(router.presentation_mode) != "controller" or game.touch_mode:
+		fail("controller input did not select controller presentation")
+		return
+	send_to_runtime(router, screen_touch(11, Vector2(90, 286), true))
+	if str(router.presentation_mode) != "touch" or not game.touch_mode:
+		fail("touch input could not reclaim touch presentation after keyboard/controller")
+		return
+	send_to_runtime(router, screen_touch(11, Vector2(90, 286), false))
+
 	# Preserve the Web mouse-compatible fallback, including iOS motion events
 	# whose button_mask is zero. Headless CI forces this surface explicitly.
 	router.last_screen_event_ms = -1000000
@@ -155,6 +199,9 @@ func _ready() -> void:
 		return
 	if str(router.active_source) != "mouse":
 		fail("mouse-compatible fallback did not own stick")
+		return
+	if str(router.presentation_mode) != "touch" or not game.touch_mode:
+		fail("forced mobile Web fallback did not present touch controls")
 		return
 
 	# If a real screen event appears after fallback capture, it must supersede
