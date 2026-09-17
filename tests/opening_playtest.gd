@@ -7,7 +7,7 @@ const PLAYER_TOUCH := 11
 const ATTACK_TOUCH := 12
 
 var game
-var touch_adapter
+var input_router
 var director
 
 func fail(message: String) -> void:
@@ -15,9 +15,7 @@ func fail(message: String) -> void:
 	get_tree().quit(1)
 
 func dispatch(event: InputEvent) -> void:
-	game._input(event)
-	if touch_adapter != null:
-		touch_adapter._input(event)
+	input_router._input(event)
 
 func send_touch(index: int, pos: Vector2, pressed: bool) -> void:
 	var event := InputEventScreenTouch.new()
@@ -112,18 +110,19 @@ func _ready() -> void:
 	game = packed.instantiate()
 	add_child(game)
 	await get_tree().process_frame
-	touch_adapter = game.get_node_or_null("TouchInputAdapter")
+	input_router = game.get_node_or_null("InputRouter")
 	director = game.get_node_or_null("SectorDirector")
-	if touch_adapter == null or director == null:
+	if input_router == null or director == null:
 		fail("required runtime input/sector controllers are missing")
 		return
 
 	# Stop wall-clock processing. From here the playtest advances the exact live
 	# runtime deterministically at 60 Hz, including enemy AI, hazards and cooldowns.
 	game.set_process(false)
+	input_router.set_process(false)
 	director.set_process(false)
 
-	# Enter via the same touch handler used by the title screen.
+	# Enter via the same touch router used by the title screen.
 	tap(Vector2(320, 192), 2)
 	simulate_frame()
 	if game.ui_mode != "play" or str(game.stage) != "sector_intake_walk":

@@ -1,0 +1,46 @@
+name: Sol Full Playthrough
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sol-full-playthrough:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Godot 4.7.2
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.7.2
+          use-dotnet: false
+          include-templates: false
+
+      - name: Import project headlessly
+        shell: bash
+        run: |
+          set -o pipefail
+          godot --headless --path . --editor --quit 2>&1 | tee godot-import.log
+          if grep -E "SCRIPT ERROR:|Parse Error:|Failed to load script|Failed to create an autoload|Failed loading resource" godot-import.log; then
+            echo "Godot import emitted a parser/resource failure"
+            exit 1
+          fi
+
+      - name: Sol fresh-save full campaign playthrough
+        shell: bash
+        run: |
+          set -o pipefail
+          timeout 25s godot --headless --path . res://tests/sol_full_playthrough.tscn 2>&1 | tee godot-sol-playthrough.log
+          if grep -E "SCRIPT ERROR:|Parse Error:|SOL_PLAYTHROUGH FAILED|ERROR:|Failed to load script|Failed loading resource" godot-sol-playthrough.log; then
+            echo "Sol full campaign playthrough failed"
+            exit 1
+          fi
+          grep -F "Dying Sun Sol fresh-save full playthrough passed" godot-sol-playthrough.log

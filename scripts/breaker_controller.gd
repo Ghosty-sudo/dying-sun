@@ -8,7 +8,6 @@ const BREAKER_COST := 18.0
 
 var charging := false
 var charge_time := 0.0
-var touch_id := -1
 var flash_time := 0.0
 var flash_power := 0.0
 
@@ -29,42 +28,9 @@ func _process(delta: float) -> void:
 			charge_time = minf(FULL_CHARGE_TIME, charge_time + delta)
 	queue_redraw()
 
-func _input(event: InputEvent) -> void:
-	var parent = game()
-	if parent == null or parent.ui_mode != "play" or parent.paused:
-		return
-	if event is InputEventKey:
-		var key := event as InputEventKey
-		if key.keycode == KEY_Q and not key.echo:
-			if key.pressed:
-				if breaker_available():
-					begin_charge()
-				else:
-					parent.flash_status("BREAKER // UNLOCKS ACT II")
-			else:
-				release_charge()
-	elif event is InputEventJoypadButton:
-		var button := event as InputEventJoypadButton
-		if int(button.button_index) == int(JOY_BUTTON_LEFT_SHOULDER):
-			if button.pressed:
-				if breaker_available():
-					begin_charge()
-				else:
-					parent.flash_status("BREAKER // UNLOCKS ACT II")
-			else:
-				release_charge()
-	elif event is InputEventScreenTouch:
-		var touch := event as InputEventScreenTouch
-		if not breaker_available():
-			return
-		if touch.pressed and touch.position.distance_to(TOUCH_BREAKER_CENTER) <= TOUCH_BREAKER_RADIUS + 10.0:
-			touch_id = touch.index
-			if not begin_charge():
-				touch_id = -1
-		elif not touch.pressed and touch.index == touch_id:
-			touch_id = -1
-			release_charge()
-
+# InputRouter owns every physical input stream. This node owns only Breaker
+# state and combat consequences so keyboard/controller/touch cannot race through
+# separate handlers.
 func begin_charge() -> bool:
 	var parent = game()
 	if parent == null or not breaker_available() or charging or parent.dead or parent.dialogue_open or parent.module_pending or parent.attack_cooldown > 0.0:
@@ -90,7 +56,6 @@ func release_charge() -> void:
 func cancel_charge() -> void:
 	charging = false
 	charge_time = 0.0
-	touch_id = -1
 
 func perform_breaker(held: float) -> void:
 	var parent = game()

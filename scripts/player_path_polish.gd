@@ -15,58 +15,9 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	queue_redraw()
 
-func _input(event: InputEvent) -> void:
-	var parent = game()
-	if parent == null or parent.ui_mode != "play":
-		return
-
-	if event is InputEventScreenTouch:
-		var touch := event as InputEventScreenTouch
-		if not touch.pressed:
-			return
-		parent.touch_mode = true
-		if touch.position.distance_to(TOUCH_PAUSE_CENTER) <= TOUCH_PAUSE_RADIUS + 10.0:
-			parent.paused = not parent.paused
-			parent.pause_selection = 0
-			get_viewport().set_input_as_handled()
-			return
-		if parent.paused and TOUCH_RESTART_RECT.has_point(touch.position):
-			restart_checkpoint(parent)
-			get_viewport().set_input_as_handled()
-			return
-
-	if event is InputEventMouseButton:
-		var mouse := event as InputEventMouseButton
-		if mouse.button_index != MOUSE_BUTTON_LEFT or not mouse.pressed:
-			return
-		if parent.touch_mode and mouse.position.distance_to(TOUCH_PAUSE_CENTER) <= TOUCH_PAUSE_RADIUS + 10.0:
-			parent.paused = not parent.paused
-			parent.pause_selection = 0
-			get_viewport().set_input_as_handled()
-			return
-		if parent.touch_mode and parent.paused and TOUCH_RESTART_RECT.has_point(mouse.position):
-			restart_checkpoint(parent)
-			get_viewport().set_input_as_handled()
-			return
-
-	if event is InputEventJoypadButton:
-		var button := event as InputEventJoypadButton
-		if button.pressed and parent.paused and int(button.button_index) == int(JOY_BUTTON_Y):
-			restart_checkpoint(parent)
-			get_viewport().set_input_as_handled()
-			return
-
-	if event is InputEventKey:
-		var key := event as InputEventKey
-		if key.pressed and not key.echo and parent.paused and key.keycode == KEY_R:
-			restart_checkpoint(parent)
-			get_viewport().set_input_as_handled()
-
-func restart_checkpoint(parent) -> void:
-	parent.paused = false
-	parent.restart_from_checkpoint()
-	parent.pause_selection = 0
-
+# Physical input is intentionally owned by InputRouter. This node is now
+# presentation/readability only so pause/restart cannot be triggered twice by
+# competing handlers.
 func objective_text(parent = null) -> String:
 	if parent == null:
 		parent = game()

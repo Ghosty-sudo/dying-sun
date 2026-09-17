@@ -23,6 +23,10 @@ func _ready() -> void:
 	if polish == null:
 		fail("PlayerPathPolish missing from main scene")
 		return
+	var router = game.get_node_or_null("InputRouter")
+	if router == null:
+		fail("InputRouter missing from main scene")
+		return
 
 	var opening_objective := str(polish.objective_text(game))
 	if "INNER SEAL" not in opening_objective:
@@ -43,8 +47,8 @@ func _ready() -> void:
 		fail("Act III authored traversal lacks persistent objective text")
 		return
 
-	# The mobile Web surface must have an explicit pause affordance instead of
-	# relying on a keyboard-only escape path.
+	# PlayerPathPolish owns only presentation now. Exercise the visible mobile
+	# affordances through the same InputRouter that owns real runtime events.
 	game.current_act = 1
 	game.stage = "sector_intake_walk"
 	game.touch_mode = true
@@ -53,9 +57,9 @@ func _ready() -> void:
 	pause_touch.index = 11
 	pause_touch.position = polish.TOUCH_PAUSE_CENTER
 	pause_touch.pressed = true
-	polish._input(pause_touch)
+	router._input(pause_touch)
 	if not game.paused:
-		fail("touch pause affordance did not pause gameplay")
+		fail("touch pause affordance did not pause gameplay through InputRouter")
 		return
 
 	game.player_hp = 1
@@ -63,7 +67,7 @@ func _ready() -> void:
 	restart_touch.index = 12
 	restart_touch.position = polish.TOUCH_RESTART_RECT.get_center()
 	restart_touch.pressed = true
-	polish._input(restart_touch)
+	router._input(restart_touch)
 	if game.paused:
 		fail("touch checkpoint restart left game paused")
 		return
@@ -71,15 +75,16 @@ func _ready() -> void:
 		fail("touch checkpoint restart did not restore player state")
 		return
 
-	# Paused controller recovery should not require navigating back to title.
+	# Paused controller recovery should use the same authority and should not
+	# require navigating back to title.
 	game.player_hp = 1
 	game.paused = true
 	var controller_restart := InputEventJoypadButton.new()
 	controller_restart.button_index = JOY_BUTTON_Y
 	controller_restart.pressed = true
-	polish._input(controller_restart)
+	router._input(controller_restart)
 	if game.paused or game.player_hp != game.max_hp():
-		fail("controller Y checkpoint restart failed from pause")
+		fail("controller Y checkpoint restart failed through InputRouter")
 		return
 
 	game.queue_free()
