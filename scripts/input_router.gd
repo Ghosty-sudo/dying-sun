@@ -1,8 +1,8 @@
 extends Node
 
 # One input owner for keyboard, controller, touch, and Web mouse-compatible
-# streams. The main game keeps gameplay logic; this node owns event routing and
-# transient pointer state so duplicate input handlers cannot fight each other.
+# streams. It also owns the currently presented control scheme so the HUD can
+# adapt to the input source actually being used.
 
 const LEFT_ZONE_X := 300.0
 const STICK_RADIUS := 48.0
@@ -32,6 +32,7 @@ var last_screen_event_ms := -1000000
 var last_released_screen_id := -999
 var last_release_ms := -1000000
 var recovery_block_until_ms := -1
+var presentation_mode := "touch" if OS.has_feature("mobile") else "keyboard"
 
 # Test-only escape hatch used by headless smoke coverage. Runtime never toggles it.
 var force_mouse_touch_fallback := false
@@ -39,6 +40,9 @@ var force_mouse_touch_fallback := false
 func _ready() -> void:
 	process_priority = -300
 	_disable_legacy_input_owners()
+	var parent = game()
+	if parent != null:
+		parent.touch_mode = presentation_mode == "touch"
 	sync_parent()
 
 func game():
@@ -48,8 +52,6 @@ func _disable_legacy_input_owners() -> void:
 	var parent = game()
 	if parent == null:
 		return
-	# game.gd still contains compatibility handlers while the core is migrated,
-	# but they are intentionally dormant. All live events enter through here.
 	parent.set_process_input(false)
 	parent.set_process_unhandled_key_input(false)
 	for node_name in ["BreakerController", "PlayerPathPolish", "ControllerAdapter", "TouchInputAdapter"]:
@@ -62,6 +64,10 @@ func _disable_legacy_input_owners() -> void:
 func now_ms() -> int:
 	return Time.get_ticks_msec()
 
+func set_presentation_mode(parent, mode: String) -> void:
+	presentation_mode = mode
+	parent.touch_mode = mode == "touch"
+
 func gameplay_accepts_movement(parent = null) -> bool:
 	if parent == null:
 		parent = game()
@@ -71,13 +77,11 @@ func _process(_delta: float) -> void:
 	var parent = game()
 	if parent == null:
 		return
+	parent.touch_mode = presentation_mode == "touch"
 	if not gameplay_accepts_movement(parent):
 		clear_movement_authority()
 		recovery_block_until_ms = maxi(recovery_block_until_ms, now_ms() + TRANSIENT_RECOVERY_GUARD_MS)
 	elif active_source != "none" and int(parent.touch_move_id) == -1 and Vector2(parent.touch_move) == Vector2.ZERO:
-		# The gameplay runtime intentionally clears its compatibility mirror when
-		# resetting a checkpoint/act. Treat that as a request to clear ownership
-		# instead of resurrecting an old vector on the next frame.
 		clear_movement_authority()
 		recovery_block_until_ms = now_ms() + TRANSIENT_RECOVERY_GUARD_MS
 	sync_parent()
@@ -93,7 +97,7 @@ func _input(event: InputEvent) -> void:
 
 	if event is InputEventScreenTouch:
 		var touch := event as InputEventScreenTouch
-		parent.touch_mode = true
+		set_presentation_mode(parent, "touch")
 		mark_screen_event()
 		if touch.pressed:
 			route_pointer_press(parent, touch.position, touch.index, "screen")
@@ -105,7 +109,7 @@ func _input(event: InputEvent) -> void:
 
 	if event is InputEventScreenDrag:
 		var drag := event as InputEventScreenDrag
-		parent.touch_mode = true
+		set_presentation_mode(parent, "touch")
 		mark_screen_event()
 		handle_screen_drag(parent, drag)
 		sync_parent()
@@ -150,13 +154,9 @@ func can_recover_drag(pointer_id: int) -> bool:
 	return not (pointer_id == last_released_screen_id and now_ms() - last_release_ms <= RELEASE_RECOVERY_GUARD_MS)
 
 func route_pointer_press(parent, pos: Vector2, pointer_id: int, source: String) -> void:
-	# A real new press is the only event allowed to clear a prior release/action
-	# block for this pointer ID. Late drags after release therefore stay inert.
 	blocked_drag_ids.erase(pointer_id)
 	recovery_block_until_ms = -1
 
-	# Menus and narrative states are exclusive. A touch used to select/advance
-	# one of these must never later become a recovered movement pointer.
 	if parent.ui_mode == "title":
 		blocked_drag_ids[pointer_id] = true
 		parent.handle_title_pointer(pos)
@@ -227,8 +227,6 @@ func route_pointer_press(parent, pos: Vector2, pointer_id: int, source: String) 
 		if active_source == "none" or (active_source == "mouse" and source == "screen"):
 			claim_movement_pointer(pointer_id, pos, source)
 		else:
-			# A second finger that arrived while the stick was already owned cannot
-			# become movement later if the original finger releases first.
 			blocked_drag_ids[pointer_id] = true
 	else:
 		blocked_drag_ids[pointer_id] = true
@@ -238,8 +236,6 @@ func route_pointer_release(_parent, pointer_id: int, source: String) -> void:
 		breaker_pointer_id = -1
 		release_breaker()
 	if source == "screen":
-		# Guard every released screen pointer, not only the movement owner. Browser
-		# event streams can deliver a final drag after an action-finger release.
 		last_released_screen_id = pointer_id
 		last_release_ms = now_ms()
 		blocked_drag_ids[pointer_id] = true
@@ -258,8 +254,6 @@ func handle_screen_drag(parent, drag: InputEventScreenDrag) -> void:
 		update_movement_vector(drag.position)
 		return
 	if active_source == "none" and drag.position.x < LEFT_ZONE_X and can_recover_drag(drag.index):
-		# Recover a genuinely lost initial press. State-boundary and released/action
-		# guards prevent late drags from becoming ghost movement.
 		claim_movement_pointer(drag.index, drag.position - drag.relative, "screen")
 		update_movement_vector(drag.position)
 
@@ -290,11 +284,17 @@ func sync_parent() -> void:
 	parent.touch_move = authority_move
 
 func mouse_touch_fallback_enabled(parent) -> bool:
-	return force_mouse_touch_fallback or parent.touch_mode or DisplayServer.is_touchscreen_available() or OS.has_feature("mobile")
+	# Do not infer touch merely because a desktop browser reports touchscreen
+	# capability. Real screen input flips the mode, while mobile Web keeps the
+	# compatibility fallback for browsers that surface touch as mouse events.
+	return force_mouse_touch_fallback or parent.touch_mode or OS.has_feature("mobile")
 
 func handle_mouse_button(parent, mouse: InputEventMouseButton) -> void:
 	if mouse.button_index != MOUSE_BUTTON_LEFT:
 		return
+
+	if not OS.has_feature("mobile") and not screen_stream_recent():
+		set_presentation_mode(parent, "keyboard")
 
 	# Desktop mouse remains useful for menus without entering touch mode.
 	if mouse.pressed and parent.ui_mode == "title":
@@ -312,9 +312,6 @@ func handle_mouse_button(parent, mouse: InputEventMouseButton) -> void:
 	if parent.ui_mode != "play" or not mouse_touch_fallback_enabled(parent):
 		return
 
-	# Suppress WebKit's mouse-compatible duplicate while a real screen stream
-	# is active/recent. This applies to buttons as well as movement so a single
-	# finger cannot attack or pause twice.
 	if screen_stream_recent():
 		if not mouse.pressed:
 			route_pointer_release(parent, MOUSE_POINTER_ID, "mouse")
@@ -322,7 +319,7 @@ func handle_mouse_button(parent, mouse: InputEventMouseButton) -> void:
 		get_viewport().set_input_as_handled()
 		return
 
-	parent.touch_mode = true
+	set_presentation_mode(parent, "touch")
 	if mouse.pressed:
 		route_pointer_press(parent, mouse.position, MOUSE_POINTER_ID, "mouse")
 	else:
@@ -332,12 +329,15 @@ func handle_mouse_button(parent, mouse: InputEventMouseButton) -> void:
 
 func handle_mouse_motion(parent, motion: InputEventMouseMotion) -> void:
 	if active_source == "mouse" and gameplay_accepts_movement(parent) and not screen_stream_recent():
-		# iOS Web paths can report button_mask == 0 while the fallback finger is
-		# still down. Ownership ends on mouse-up/focus loss, not that mask.
 		update_movement_vector(motion.position)
 		sync_parent()
+	elif not OS.has_feature("mobile") and not screen_stream_recent():
+		set_presentation_mode(parent, "keyboard")
 
 func handle_key(parent, key: InputEventKey) -> void:
+	if key.pressed and not key.echo:
+		set_presentation_mode(parent, "keyboard")
+
 	# Breaker is the only keyboard action that needs both press and release.
 	if parent.ui_mode == "play" and not parent.paused and key.keycode == KEY_Q and not key.echo:
 		if key.pressed:
@@ -396,6 +396,8 @@ func handle_key(parent, key: InputEventKey) -> void:
 
 func handle_joy_button(parent, button: InputEventJoypadButton) -> void:
 	var index := int(button.button_index)
+	if button.pressed:
+		set_presentation_mode(parent, "controller")
 
 	# Breaker shoulder needs press + release, just like Q.
 	if parent.ui_mode == "play" and not parent.paused and index == int(JOY_BUTTON_LEFT_SHOULDER):
@@ -475,6 +477,8 @@ func handle_joy_button(parent, button: InputEventJoypadButton) -> void:
 	get_viewport().set_input_as_handled()
 
 func handle_joy_motion(parent, motion: InputEventJoypadMotion) -> void:
+	if absf(motion.axis_value) >= 0.22:
+		set_presentation_mode(parent, "controller")
 	if float(parent.menu_nav_cooldown) > 0.0 or absf(motion.axis_value) < JOY_NAV_THRESHOLD:
 		return
 	if int(motion.axis) == int(JOY_AXIS_LEFT_Y):
